@@ -1,16 +1,20 @@
 using UnityEngine;
+using System.Collections;
 
 public class bushScript : MonoBehaviour
 {
     public int numFruits;
-    float hungerValue = 70;
+    float hungerValue = 70.0f;
+    float fruitGrowthTime = 10.0f;
     SpriteRenderer spriteRenderer;
+    Sprite[] bushSprites;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
-        Debug.Log(spriteRenderer.sprite.name);
+        bushSprites = Resources.LoadAll<Sprite>("Bush");
+        StartCoroutine(GrowLoop());
     }
 
     // Update is called once per frame
@@ -19,11 +23,20 @@ public class bushScript : MonoBehaviour
 
     }
 
+    IEnumerator GrowLoop()
+    {
+        while (numFruits < 3)
+        {
+            yield return new WaitForSeconds(fruitGrowthTime);
+            growFruit();
+        }
+    }
+
     public float eaten()
     {
         Debug.Log("-1 Fruit");
         numFruits--;
-        spriteRenderer.sprite = Resources.Load<Sprite>("Bush_" + numFruits);
+        spriteRenderer.sprite = bushSprites[numFruits];
         if (numFruits == 0) gameObject.tag = "not food";
         return hungerValue;
     }
@@ -31,7 +44,7 @@ public class bushScript : MonoBehaviour
     public void growFruit()
     {
         numFruits++;
-        spriteRenderer.sprite = Resources.Load<Sprite>("Bush_" + numFruits);
+        spriteRenderer.sprite = bushSprites[numFruits];
         gameObject.tag = "food";
     }
 }

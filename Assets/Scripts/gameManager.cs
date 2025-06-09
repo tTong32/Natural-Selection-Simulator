@@ -11,7 +11,7 @@ public class gameManager : MonoBehaviour
         StartCoroutine(TurnLoop());
     }
 
-    System.Collections.IEnumerator TurnLoop()
+    IEnumerator TurnLoop()
     {
         while (true)
         {

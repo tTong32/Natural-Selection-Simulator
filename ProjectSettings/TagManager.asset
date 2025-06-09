@@ -6,6 +6,7 @@ TagManager:
   tags:
   - food
   - blob
+  - not food
   layers:
   - Default
   - TransparentFX
