@@ -372,7 +372,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   numFruits: 3
-  bushSprite: {fileID: 0}
+  hungerValue: 50
+  bushSprite: {fileID: -8663683955189347131, guid: 16fdd24c4f8ffa7419953f23bd4f74fe, type: 3}
 --- !u!212 &743775281
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -519,9 +520,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53a629a96d6434c498e45162b1eca5a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movement: 3
-  sight: 2.5
-  reach: 0.2
+  movement: 1
+  sight: 20
+  reach: 0.5
 --- !u!212 &839686598
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -586,7 +587,7 @@ Transform:
   m_GameObject: {fileID: 839686596}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.9, y: -2.41, z: 0.04077655}
+  m_LocalPosition: {x: -0.75, y: 0.21, z: 0.04077655}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -624,7 +625,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   numFruits: 3
-  bushSprite: {fileID: 0}
+  hungerValue: 50
+  bushSprite: {fileID: -8663683955189347131, guid: 16fdd24c4f8ffa7419953f23bd4f74fe, type: 3}
 --- !u!212 &1241922375
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -773,7 +775,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   numFruits: 3
-  bushSprite: {fileID: 0}
+  hungerValue: 50
+  bushSprite: {fileID: -8663683955189347131, guid: 16fdd24c4f8ffa7419953f23bd4f74fe, type: 3}
 --- !u!212 &1468099560
 SpriteRenderer:
   m_ObjectHideFlags: 0

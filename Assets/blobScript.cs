@@ -3,10 +3,10 @@ using UnityEngine;
 public class blobScript : MonoBehaviour
 {
     // Radius of the blob
-    public float movement = 0.5f;
-    public float sight = 2.5f;
+    public float movement;
+    public float sight;
 
-    public float reach = 0.2f;
+    public float reach;
 
     GameObject target;
     float moveX = 0.0f;
@@ -16,8 +16,8 @@ public class blobScript : MonoBehaviour
     // Current hunger level of the blob
     float hunger = 100.0f;
     // Decay rate of hunger per turn
-    float hungerDecayRate = 7.5f;
-    float hungerThreshold = 30.0f;
+    float hungerDecayRate = 5.0f;
+    float hungerThreshold = 35.0f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -39,22 +39,48 @@ public class blobScript : MonoBehaviour
 
     public void turn()
     {
+        
+        Collider2D[] withinReach = Physics2D.OverlapCircleAll(transform.position, reach);
 
         // Decrease hunger by the decay rate
         hunger -= hungerDecayRate;
 
-        // if blob is within reach of food, eat food
-
-
         // If hunger is below the threshold, seek food
         if (hunger < hungerThreshold)
         {
-            seek("food");
+            bool eaten = false;
+
+            // if blob is within reach of food, eat food
+            foreach (Collider2D collider in withinReach)
+            {
+                if (collider.CompareTag("food"))
+                {
+                    // If the blob is close enough to the food, eat it
+                    if (collider.GetComponent<bushScript>().numFruits <= 0) continue;
+                    else
+                    {
+                        Debug.Log("Eaten!");
+                        hunger += collider.GetComponent<bushScript>().eaten();
+                        if (hunger > maxHunger) hunger = maxHunger; // Cap the hunger at maxHunger
+                        eaten = true;
+                    }
+                }
+            }
+            
+            if (!eaten)
+            {
+                // If blob has not eaten
+                seek("food");
+                Debug.Log("Seeking food");
+                return;
+            }
+
         }
         else
         {
             // Otherwise, wander randomly
             wander();
+            return;
         }
     }
 
@@ -73,21 +99,42 @@ public class blobScript : MonoBehaviour
         moveY = transform.position.y + Mathf.Sin(angle) * movement;
     }
 
+    void wander(float angle)
+    {
+        moveX = transform.position.x + Mathf.Cos(angle) * movement;
+        moveY = transform.position.y + Mathf.Sin(angle) * movement;
+    }
+
     void seek(string tag)
     {
         // Find food within sight radius
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, sight);
+
+        if (colliders.Length == 0)
+        {
+            wander();
+            return; // No food found, exit the method
+        }
+
+        // find the closest food item with the specified tag
+        float closestDistance = sight+1f; // Initialize to a value larger than sight radius
+        Collider2D closest = null;
         foreach (Collider2D collider in colliders)
         {
             if (collider.CompareTag(tag))
             {
-                // Move towards the food
-                Vector3 foodPosition = collider.transform.position;
-                moveX = foodPosition.x;
-                moveY = foodPosition.y;
-                break; // Stop searching after finding the first food item
+                float dist = Vector2.Distance(transform.position, collider.transform.position);
+                if (dist < closestDistance)
+                {
+                    closestDistance = dist;
+                    closest = collider;
+                }
             }
         }
+        // find angle between the blob and the closest food item
+        Vector2 direction = closest.transform.position - transform.position;
+        float angle = Mathf.Atan2(direction.y, direction.x);
+        wander(angle);
     }
 }
 
