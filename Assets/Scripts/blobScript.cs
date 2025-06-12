@@ -2,33 +2,23 @@ using UnityEngine;
 
 public class blobScript : MonoBehaviour
 {
-    // Radius of the blob
-    float movement = 1.5f;
-    float sight = 10f;
+    Rigidbody2D rb;
 
-    float reach = 0.5f;
+    // basic stats
+    float movement = 1.5f, sight = 10f, reach = 0.5f;
 
     GameObject target;
-    float moveX = 0.0f;
-    float moveY = 0.0f;
+    float moveX = 0.0f, moveY = 0.0f;
 
-    float maxHunger = 100.0f;
-    // Current hunger level of the blob
-    float hunger = 100.0f;
-    // Decay rate of hunger per turn
-    float hungerDecayRate = 2.5f;
-    float hungerThreshold = 35.0f;
+    // hunger stats
+    float maxHunger = 100.0f, hunger = 100.0f, hungerDecayRate = 2.5f, hungerThreshold = 35.0f;
 
-    float maxWater = 100.0f;
-    float water = 100.0f;
-
-    float waterDecayRate = 6.5f;
-    float waterThreshold = 40.0f;
+    float maxWater = 100.0f, water = 100.0f, waterDecayRate = 6.5f, waterThreshold = 40.0f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-
+        rb = GetComponent<Rigidbody2D>();
     }
 
     // Update is called once per frame
@@ -80,8 +70,9 @@ public class blobScript : MonoBehaviour
     void move()
     {
         // it takes turnTime to move destination
-        transform.position += new Vector3((moveX - transform.position.x) * movement * Time.deltaTime,
-                                        (moveY - transform.position.y) * movement * Time.deltaTime, 0);
+        Vector2 target = new Vector2(moveX, moveY);
+        Vector2 newPos = Vector2.MoveTowards(rb.position, target, movement * Time.deltaTime);
+        rb.MovePosition(newPos);
     }
 
     void wander()

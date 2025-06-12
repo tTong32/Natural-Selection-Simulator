@@ -7,6 +7,7 @@ TagManager:
   - food
   - blob
   - not food
+  - water
   layers:
   - Default
   - TransparentFX
