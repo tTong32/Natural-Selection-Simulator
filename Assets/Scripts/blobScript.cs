@@ -5,15 +5,18 @@ public class blobScript : MonoBehaviour
     Rigidbody2D rb;
 
     // basic stats
-    float movement = 1.5f, sight = 10f, reach = 0.5f;
+    float movement = 2f, sight = 10f, reach = 0.5f;
 
-    GameObject target;
+    // target stats
     float moveX = 0.0f, moveY = 0.0f;
 
     // hunger stats
     float maxHunger = 100.0f, hunger = 100.0f, hungerDecayRate = 2.5f, hungerThreshold = 35.0f;
-
+    // water stats
     float maxWater = 100.0f, water = 100.0f, waterDecayRate = 6.5f, waterThreshold = 40.0f;
+    // reproduction stats
+    float reproReach = 0.5f, incubationTime = 10f, reproThreshold = 70f;
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -21,8 +24,9 @@ public class blobScript : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
     }
 
-    // Update is called once per frame
-    void Update()
+    // Update function was deleted, but can be put back if needed for non-rigidbody functions
+    // FixedUpdate is called at a fixed interval
+    void FixedUpdate()
     {
         move();
     }
@@ -40,6 +44,7 @@ public class blobScript : MonoBehaviour
         // check water first
         if (water < waterThreshold)
         {
+            // serves as a method to see if water is within reach
             bool drank = checkWater(withinReach);
             if (!drank)
             {
@@ -50,14 +55,18 @@ public class blobScript : MonoBehaviour
         // If hunger is below the threshold, seek food
         else if (hunger < hungerThreshold)
         {
+            // serves as a method to see if water is within reach
             bool eaten = checkHunger(withinReach);
             if (!eaten)
             {
                 // If blob has not eaten
                 seek("food");
-                Debug.Log("Seeking food");
                 return;
             }
+        }
+        else if (hunger < reproThreshold && water < reproThreshold)
+        {
+            checkReproduction();
         }
         else
         {
@@ -71,7 +80,7 @@ public class blobScript : MonoBehaviour
     {
         // it takes turnTime to move destination
         Vector2 target = new Vector2(moveX, moveY);
-        Vector2 newPos = Vector2.MoveTowards(rb.position, target, movement * Time.deltaTime);
+        Vector2 newPos = Vector2.MoveTowards(rb.position, target, movement * Time.fixedDeltaTime);
         rb.MovePosition(newPos);
     }
 
@@ -91,18 +100,11 @@ public class blobScript : MonoBehaviour
 
     void seek(string tag)
     {
-        // Find food within sight radius
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, sight);
 
-        if (colliders.Length == 0)
-        {
-            wander();
-            return; // no target found
-        }
-
-        // find the closest food item with the specified tag
-        float closestDistance = sight + 1f; // Initialize to a value larger than sight radius
         Collider2D closest = null;
+        float closestDistance = float.MaxValue;
+
         foreach (Collider2D collider in colliders)
         {
             if (collider.CompareTag(tag))
@@ -115,10 +117,17 @@ public class blobScript : MonoBehaviour
                 }
             }
         }
-        // find angle between the blob and the closest food item
-        Vector2 direction = closest.transform.position - transform.position;
-        float angle = Mathf.Atan2(direction.y, direction.x);
-        wander(angle);
+
+        if (closest != null)
+        {
+            Vector2 direction = closest.transform.position - transform.position;
+            float angle = Mathf.Atan2(direction.y, direction.x);
+            wander(angle);
+        }
+        else
+        {
+            wander();
+        }
     }
 
     void checkDeath()
@@ -132,38 +141,40 @@ public class blobScript : MonoBehaviour
 
     bool checkHunger(Collider2D[] withinReach)
     {
-        bool eaten = false;
         // if blob is within reach of food, eat food
         foreach (Collider2D collider in withinReach)
         {
             if (collider.CompareTag("food"))
             {
                 // If the blob is close enough to the food, eat it
-                if (collider.GetComponent<bushScript>().numFruits <= 0) continue;
-                else
+                if (collider.TryGetComponent<bushScript>(out var bush) && bush.numFruits > 0)
                 {
                     Debug.Log("Eaten!");
-                    hunger += collider.GetComponent<bushScript>().eaten();
+                    hunger += bush.eaten();
                     if (hunger > maxHunger) hunger = maxHunger; // Cap the hunger at maxHunger
-                    eaten = true;
+                    return true;
                 }
             }
         }
-        return eaten;
+        return false;
     }
 
     bool checkWater(Collider2D[] withinReach)
     {
-        bool drank = false;
         foreach (Collider2D collider in withinReach)
         {
             if (collider.CompareTag("water"))
             {
                 water = maxWater;
-                drank = true;
+                return true;
             }
         }
-        return drank;
+        return false;
+    }
+
+    void checkReproduction()
+    {
+        
     }
 }
 

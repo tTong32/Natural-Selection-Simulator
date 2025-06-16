@@ -25,10 +25,13 @@ public class bushScript : MonoBehaviour
 
     IEnumerator GrowLoop()
     {
-        while (numFruits < 3)
+        while (true)
         {
             yield return new WaitForSeconds(fruitGrowthTime);
-            growFruit();
+            if (numFruits < 3)
+            {
+                growFruit();
+            }
         }
     }
 
