@@ -11,11 +11,12 @@ public class blobScript : MonoBehaviour
     float moveX = 0.0f, moveY = 0.0f;
 
     // hunger stats
-    float maxHunger = 100.0f, hunger = 100.0f, hungerDecayRate = 2.5f, hungerThreshold = 35.0f;
+    float maxHunger = 100.0f, hunger = 60.0f, hungerDecayRate = 2.5f, hungerThreshold = 35.0f;
     // water stats
-    float maxWater = 100.0f, water = 100.0f, waterDecayRate = 6.5f, waterThreshold = 40.0f;
+    float maxWater = 100.0f, water = 60.0f, waterDecayRate = 7f, waterThreshold = 40.0f;
     // reproduction stats
-    float reproReach = 0.5f, incubationTime = 10f, reproThreshold = 70f;
+    float reproReach = 0.5f, incubationTime = 10f, reproThreshold = 75f;
+    bool reproduced = false;
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -33,8 +34,8 @@ public class blobScript : MonoBehaviour
 
     public void turn()
     {
-
         checkDeath();
+        reproduced = false;
         Collider2D[] withinReach = Physics2D.OverlapCircleAll(transform.position, reach);
 
         // Decrease hunger and water by decayrate
@@ -64,7 +65,7 @@ public class blobScript : MonoBehaviour
                 return;
             }
         }
-        else if (hunger < reproThreshold && water < reproThreshold)
+        else if (hunger > reproThreshold && water > reproThreshold && reproduced == false)
         {
             checkReproduction();
         }
@@ -174,7 +175,19 @@ public class blobScript : MonoBehaviour
 
     void checkReproduction()
     {
-        
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, reproReach);
+
+        foreach (Collider2D collider in colliders)
+        {
+            if (collider.CompareTag("blob"))
+            {
+                gameManager[] gm = FindObjectsByType<gameManager>(FindObjectsSortMode.None);
+                gm[0].blobReproduction(transform.position.x, transform.position.y,
+                                        collider.transform.position.x, collider.transform.position.y);
+                reproduced = true;
+                return;
+            }
+        }
     }
 }
 
