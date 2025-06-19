@@ -15,7 +15,7 @@ public class blobScript : MonoBehaviour
     // water stats
     float maxWater = 100.0f, water = 60.0f, waterDecayRate = 7f, waterThreshold = 40.0f;
     // reproduction stats
-    float reproReach = 0.5f, incubationTime = 10f, reproThreshold = 75f;
+    float reproReach = 1f, incubationTime = 10f, reproThreshold = 65f;
     bool reproduced = false;
 
 
@@ -65,7 +65,7 @@ public class blobScript : MonoBehaviour
                 return;
             }
         }
-        else if (hunger > reproThreshold && water > reproThreshold && reproduced == false)
+        else if (checkReproductionConditions())
         {
             checkReproduction();
         }
@@ -173,21 +173,83 @@ public class blobScript : MonoBehaviour
         return false;
     }
 
+    public bool checkReproductionConditions()
+    {
+        if (hunger > reproThreshold && water > reproThreshold && reproduced == false)
+        {
+            return true;
+        }
+        return false;
+    }
+
     void checkReproduction()
     {
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, reproReach);
 
         foreach (Collider2D collider in colliders)
         {
-            if (collider.CompareTag("blob"))
+            Debug.Log("Attempt");
+            if (collider.CompareTag("blob") && collider.gameObject != this.gameObject)
             {
+                Debug.Log("Found Blob");
                 gameManager[] gm = FindObjectsByType<gameManager>(FindObjectsSortMode.None);
-                gm[0].blobReproduction(transform.position.x, transform.position.y,
-                                        collider.transform.position.x, collider.transform.position.y);
-                reproduced = true;
-                return;
+                blobScript otherBlob = collider.GetComponent<blobScript>();
+                if (otherBlob.checkReproductionConditions())
+                {
+                    Debug.Log("Success");
+                    gm[0].blobReproduction(returnPosition(),
+                                            otherBlob.returnPosition(),
+                                            returnStats(),
+                                            otherBlob.returnStats());
+                    reproduced = true;
+                    water -= 37.0f;
+                    hunger -= 37.0f;
+                    otherBlob.water -= 37.0f;
+                    otherBlob.hunger -= 37.0f;
+                    return;
+                }
             }
         }
+    }
+
+    float[] returnStats()
+    {
+        float[] stats = new float[11];
+        stats[0] = movement;
+        stats[1] = sight;
+        stats[2] = reach;
+        stats[3] = maxHunger;
+        stats[4] = hungerDecayRate;
+        stats[5] = hungerThreshold;
+        stats[6] = maxWater;
+        stats[7] = waterDecayRate;
+        stats[8] = waterThreshold;
+        stats[9] = reproReach;
+        stats[10] = incubationTime;
+        return stats;
+    }
+
+    public void setStats(float[] stats)
+    {
+        movement = stats[0];
+        sight = stats[1];
+        reach = stats[2];
+        maxHunger = stats[3];
+        hungerDecayRate = stats[4];
+        hungerThreshold = stats[5];
+        maxWater = stats[6];
+        waterDecayRate = stats[7];
+        waterThreshold = stats[8];
+        reproReach = stats[9];
+        incubationTime = stats[10];
+    }
+
+    float[] returnPosition()
+    {
+        float[] position = new float[2];
+        position[0] = transform.position.x;
+        position[1] = transform.position.y;
+        return position;
     }
 }
 

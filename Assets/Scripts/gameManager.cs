@@ -11,7 +11,7 @@ public class gameManager : MonoBehaviour
     void Start()
     {
         StartCoroutine(TurnLoop());
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 6; i++)
         {
             spawnBlob(Random.Range(-initialBlobSpawnOffset, initialBlobSpawnOffset),
                       Random.Range(-initialBlobSpawnOffset, initialBlobSpawnOffset));
@@ -34,13 +34,29 @@ public class gameManager : MonoBehaviour
         }
     }
 
+    void spawnBlob(float x, float y, float[] b1stats, float[] b2stats)
+    {
+        int n = b1stats.Length;
+        GameObject newBlob = Instantiate(blobPrefab, new Vector3(x, y, 0), Quaternion.identity);
+        blobScript blob = newBlob.GetComponent<blobScript>();
+        float[] newBlobStats = new float[n];
+        for (int i = 0; i < n; i++) { newBlobStats[i] = (b1stats[i] + b2stats[i]) / 2 * returnReproductionOffset(); }
+        blob.setStats(newBlobStats);
+        return;
+    }
+
     void spawnBlob(float x, float y)
     {
         Instantiate(blobPrefab, new Vector3(x, y, 0), Quaternion.identity);
     }
 
-    public void blobReproduction(float b1x, float b1y, float b2x, float b2y)
+    public void blobReproduction(float[] b1pos, float[] b2pos, float[] b1stats, float[] b2stats)
     {
-        spawnBlob((b1x + b2x) / 2, (b1y + b2y) / 2);
+        spawnBlob((b1pos[0] + b2pos[0]) / 2, (b1pos[1] + b1pos[1]) / 2, b1stats, b2stats);
     }
+
+    float returnReproductionOffset()
+    {
+        return 1 + 0.00016f * Mathf.Pow(Random.Range(-50f, 50f), 3) / 100;
+    } 
 }
