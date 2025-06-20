@@ -6,12 +6,14 @@ public class gameManager : MonoBehaviour
     float turntime = 1.0f;
     float initialBlobSpawnOffset = 2.0f;
     public GameObject blobPrefab;
+    public GameObject mainScene;
+    public sceneSwitcher sceneSwitch;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         StartCoroutine(TurnLoop());
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 8; i++)
         {
             spawnBlob(Random.Range(-initialBlobSpawnOffset, initialBlobSpawnOffset),
                       Random.Range(-initialBlobSpawnOffset, initialBlobSpawnOffset));
@@ -37,17 +39,18 @@ public class gameManager : MonoBehaviour
     void spawnBlob(float x, float y, float[] b1stats, float[] b2stats)
     {
         int n = b1stats.Length;
-        GameObject newBlob = Instantiate(blobPrefab, new Vector3(x, y, 0), Quaternion.identity);
+        GameObject newBlob = Instantiate(blobPrefab, new Vector3(x, y, 0), Quaternion.identity, mainScene.transform);
         blobScript blob = newBlob.GetComponent<blobScript>();
         float[] newBlobStats = new float[n];
         for (int i = 0; i < n; i++) { newBlobStats[i] = (b1stats[i] + b2stats[i]) / 2 * returnReproductionOffset(); }
         blob.setStats(newBlobStats);
+        checkScene(newBlob);
         return;
     }
 
     void spawnBlob(float x, float y)
     {
-        Instantiate(blobPrefab, new Vector3(x, y, 0), Quaternion.identity);
+        Instantiate(blobPrefab, new Vector3(x, y, 0), Quaternion.identity, mainScene.transform);
     }
 
     public void blobReproduction(float[] b1pos, float[] b2pos, float[] b1stats, float[] b2stats)
@@ -57,6 +60,23 @@ public class gameManager : MonoBehaviour
 
     float returnReproductionOffset()
     {
-        return 1 + 0.00016f * Mathf.Pow(Random.Range(-50f, 50f), 3) / 100;
-    } 
+        float n = Random.Range(-50f, 50f);
+
+        if (n < 0)
+        {
+            return 1 - 0.008f * Mathf.Pow(n, 2) / 100;
+        }
+        else
+        {
+            return 1 + 0.008f * Mathf.Pow(n, 2) / 100;
+        }
+    }
+
+    void checkScene(GameObject obj)
+    {
+        if (sceneSwitch.currentScene != "main")
+        {
+            obj.GetComponent<Renderer>().enabled = false;
+        }
+    }
 }

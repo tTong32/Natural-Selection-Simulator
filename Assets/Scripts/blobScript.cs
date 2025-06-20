@@ -5,17 +5,19 @@ public class blobScript : MonoBehaviour
     Rigidbody2D rb;
 
     // basic stats
-    float movement = 2f, sight = 10f, reach = 0.5f;
+    public float movement = 2f, sight = 4f, reach = 0.5f;
+    // base basic stats
+    float baseMovement = 2f, baseSight = 4f, baseReach = 0.5f;
 
     // target stats
     float moveX = 0.0f, moveY = 0.0f;
 
     // hunger stats
-    float maxHunger = 100.0f, hunger = 60.0f, hungerDecayRate = 2.5f, hungerThreshold = 35.0f;
+    float maxHunger = 100.0f, hunger = 55.0f, hungerDecayRate = 2.5f, hungerThreshold = 35.0f;
     // water stats
-    float maxWater = 100.0f, water = 60.0f, waterDecayRate = 7f, waterThreshold = 40.0f;
+    float maxWater = 100.0f, water = 55.0f, waterDecayRate = 7f, waterThreshold = 40.0f;
     // reproduction stats
-    float reproReach = 1f, incubationTime = 10f, reproThreshold = 65f;
+    float reproReach = 2f, incubationTime = 10f, reproThreshold = 60f;
     bool reproduced = false;
 
 
@@ -65,15 +67,16 @@ public class blobScript : MonoBehaviour
                 return;
             }
         }
-        else if (checkReproductionConditions())
-        {
-            checkReproduction();
-        }
         else
         {
             // Otherwise, wander randomly
             wander();
             return;
+        }
+
+        if (checkReproductionConditions())
+        {
+            checkReproduction();
         }
     }
 
@@ -137,6 +140,7 @@ public class blobScript : MonoBehaviour
         {
             // If the blob's hunger reaches zero, destroy it
             Destroy(gameObject);
+            Debug.Log("Dead");
         }
     }
 
@@ -150,7 +154,6 @@ public class blobScript : MonoBehaviour
                 // If the blob is close enough to the food, eat it
                 if (collider.TryGetComponent<bushScript>(out var bush) && bush.numFruits > 0)
                 {
-                    Debug.Log("Eaten!");
                     hunger += bush.eaten();
                     if (hunger > maxHunger) hunger = maxHunger; // Cap the hunger at maxHunger
                     return true;
@@ -188,10 +191,8 @@ public class blobScript : MonoBehaviour
 
         foreach (Collider2D collider in colliders)
         {
-            Debug.Log("Attempt");
             if (collider.CompareTag("blob") && collider.gameObject != this.gameObject)
             {
-                Debug.Log("Found Blob");
                 gameManager[] gm = FindObjectsByType<gameManager>(FindObjectsSortMode.None);
                 blobScript otherBlob = collider.GetComponent<blobScript>();
                 if (otherBlob.checkReproductionConditions())
@@ -214,10 +215,11 @@ public class blobScript : MonoBehaviour
 
     float[] returnStats()
     {
-        float[] stats = new float[11];
+        float[] stats = new float[3];
         stats[0] = movement;
         stats[1] = sight;
         stats[2] = reach;
+        /*
         stats[3] = maxHunger;
         stats[4] = hungerDecayRate;
         stats[5] = hungerThreshold;
@@ -226,6 +228,7 @@ public class blobScript : MonoBehaviour
         stats[8] = waterThreshold;
         stats[9] = reproReach;
         stats[10] = incubationTime;
+        */
         return stats;
     }
 
@@ -234,6 +237,7 @@ public class blobScript : MonoBehaviour
         movement = stats[0];
         sight = stats[1];
         reach = stats[2];
+        /*
         maxHunger = stats[3];
         hungerDecayRate = stats[4];
         hungerThreshold = stats[5];
@@ -242,6 +246,15 @@ public class blobScript : MonoBehaviour
         waterThreshold = stats[8];
         reproReach = stats[9];
         incubationTime = stats[10];
+        */
+
+        // decay rates are inversely proportional to movement
+        hungerDecayRate = baseMovement / movement * hungerDecayRate;
+        waterDecayRate = baseMovement / movement * waterDecayRate;
+
+        // Thresholds are inversely proportional to sight
+        hungerThreshold = baseSight / sight * hungerThreshold;
+        waterThreshold = baseSight / sight * waterThreshold;
     }
 
     float[] returnPosition()

@@ -37,7 +37,6 @@ public class bushScript : MonoBehaviour
 
     public float eaten()
     {
-        Debug.Log("-1 Fruit");
         numFruits--;
         spriteRenderer.sprite = bushSprites[numFruits];
         if (numFruits == 0) gameObject.tag = "not food";
@@ -46,7 +45,6 @@ public class bushScript : MonoBehaviour
 
     public void growFruit()
     {
-        Debug.Log("+1 Fruit");
         numFruits++;
         spriteRenderer.sprite = bushSprites[numFruits];
         gameObject.tag = "food";
