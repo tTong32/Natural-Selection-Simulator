@@ -12,6 +12,11 @@ public class sceneSwitcher : MonoBehaviour
     public TMP_Text buttonText;
     public string currentScene = "main";
 
+    void Start()
+    {
+        SwitchToMain();
+    }
+
     public void SwitchScene()
     {
         if (currentScene == "main")

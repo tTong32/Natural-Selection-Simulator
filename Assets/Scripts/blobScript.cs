@@ -18,13 +18,17 @@ public class blobScript : MonoBehaviour
     float maxWater = 100.0f, water = 55.0f, waterDecayRate = 7f, waterThreshold = 40.0f;
     // reproduction stats
     float reproReach = 2f, incubationTime = 10f, reproThreshold = 60f;
+    // energy stats
+    float maxEnergy = 100f, energy = 100f, energyDecayRate = 0.9f;
     bool reproduced = false;
+    gameManager[] gm;
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        gm = FindObjectsByType<gameManager>(FindObjectsSortMode.None);
     }
 
     // Update function was deleted, but can be put back if needed for non-rigidbody functions
@@ -138,8 +142,7 @@ public class blobScript : MonoBehaviour
     {
         if (hunger <= 0.0f || water <= 0.0f)
         {
-            // If the blob's hunger reaches zero, destroy it
-            Destroy(gameObject);
+            gm[0].removeBlob(this);
             Debug.Log("Dead");
         }
     }
@@ -169,6 +172,7 @@ public class blobScript : MonoBehaviour
         {
             if (collider.CompareTag("water"))
             {
+                energy -= 15f;
                 water = maxWater;
                 return true;
             }
@@ -193,7 +197,6 @@ public class blobScript : MonoBehaviour
         {
             if (collider.CompareTag("blob") && collider.gameObject != this.gameObject)
             {
-                gameManager[] gm = FindObjectsByType<gameManager>(FindObjectsSortMode.None);
                 blobScript otherBlob = collider.GetComponent<blobScript>();
                 if (otherBlob.checkReproductionConditions())
                 {
@@ -215,10 +218,11 @@ public class blobScript : MonoBehaviour
 
     float[] returnStats()
     {
-        float[] stats = new float[3];
+        float[] stats = new float[4];
         stats[0] = movement;
         stats[1] = sight;
         stats[2] = reach;
+        stats[3] = incubationTime;
         /*
         stats[3] = maxHunger;
         stats[4] = hungerDecayRate;
@@ -237,6 +241,7 @@ public class blobScript : MonoBehaviour
         movement = stats[0];
         sight = stats[1];
         reach = stats[2];
+        incubationTime = stats[3];
         /*
         maxHunger = stats[3];
         hungerDecayRate = stats[4];
