@@ -6,6 +6,7 @@ public class blobScript : MonoBehaviour
 
     // basic stats
     public float movement = 2f, sight = 4f, reach = 0.5f;
+    float anchorMove, anchorSight, anchorReach;
     // base basic stats
     float baseMovement = 2f, baseSight = 4f, baseReach = 0.5f;
 
@@ -19,7 +20,10 @@ public class blobScript : MonoBehaviour
     // reproduction stats
     float reproReach = 2f, incubationTime = 10f, reproThreshold = 60f;
     // energy stats
-    float maxEnergy = 100f, energy = 100f, energyDecayRate = 0.9f;
+    float maxEnergy = 100f, energy = 100f, energyDecayRate = 0.9f, energyRestorationRate = 9f, energyThreshold = 25f;
+    // tired stats
+    float tiredMove, tiredSight, tiredReach;
+    bool sleep = false, tired = false;
     bool reproduced = false;
     gameManager[] gm;
 
@@ -29,6 +33,12 @@ public class blobScript : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         gm = FindObjectsByType<gameManager>(FindObjectsSortMode.None);
+        tiredMove = movement / 2;
+        anchorMove = movement;
+        tiredSight = sight / 2;
+        anchorSight = sight;
+        tiredReach = reach / 2;
+        anchorReach = reach;
     }
 
     // Update function was deleted, but can be put back if needed for non-rigidbody functions
@@ -47,10 +57,12 @@ public class blobScript : MonoBehaviour
         // Decrease hunger and water by decayrate
         hunger -= hungerDecayRate;
         water -= waterDecayRate;
+        energy -= energyDecayRate;
 
         // check water first
         if (water < waterThreshold)
         {
+            sleep = false;
             // serves as a method to see if water is within reach
             bool drank = checkWater(withinReach);
             if (!drank)
@@ -62,6 +74,7 @@ public class blobScript : MonoBehaviour
         // If hunger is below the threshold, seek food
         else if (hunger < hungerThreshold)
         {
+            sleep = false;
             // serves as a method to see if water is within reach
             bool eaten = checkHunger(withinReach);
             if (!eaten)
@@ -71,8 +84,18 @@ public class blobScript : MonoBehaviour
                 return;
             }
         }
+        else if ((energy < energyThreshold || sleep) && energy < maxEnergy)
+        {
+            sleep = checkSleep(withinReach);
+            if (!sleep)
+            {
+                seek("shelter");
+                return;
+            }
+        }
         else
         {
+            sleep = false;
             // Otherwise, wander randomly
             wander();
             return;
@@ -82,6 +105,9 @@ public class blobScript : MonoBehaviour
         {
             checkReproduction();
         }
+
+        if (energy < energyThreshold - 10) setStats("tired");
+        else setStats("normal"); 
     }
 
     void move()
@@ -157,6 +183,7 @@ public class blobScript : MonoBehaviour
                 // If the blob is close enough to the food, eat it
                 if (collider.TryGetComponent<bushScript>(out var bush) && bush.numFruits > 0)
                 {
+                    energy -= 15f;
                     hunger += bush.eaten();
                     if (hunger > maxHunger) hunger = maxHunger; // Cap the hunger at maxHunger
                     return true;
@@ -172,8 +199,22 @@ public class blobScript : MonoBehaviour
         {
             if (collider.CompareTag("water"))
             {
-                energy -= 15f;
+                energy -= 12f;
                 water = maxWater;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool checkSleep(Collider2D[] withinReach)
+    {
+        foreach (Collider2D collider in withinReach)
+        {
+            if (collider.CompareTag("shelter"))
+            {
+                energy += energyRestorationRate;
+                if (energy > maxEnergy) energy = maxEnergy;
                 return true;
             }
         }
@@ -182,7 +223,7 @@ public class blobScript : MonoBehaviour
 
     public bool checkReproductionConditions()
     {
-        if (hunger > reproThreshold && water > reproThreshold && reproduced == false)
+        if (hunger > reproThreshold && water > reproThreshold && energy > reproThreshold && reproduced == false)
         {
             return true;
         }
@@ -208,11 +249,31 @@ public class blobScript : MonoBehaviour
                     reproduced = true;
                     water -= 37.0f;
                     hunger -= 37.0f;
+                    energy -= 37.0f;
                     otherBlob.water -= 37.0f;
                     otherBlob.hunger -= 37.0f;
+                    otherBlob.energy -= 37.0f;
                     return;
                 }
             }
+        }
+    }
+
+    void setStats(string condition)
+    {
+        if (condition == "tired" && !tired)
+        {
+            movement = tiredMove;
+            sight = tiredSight;
+            reach = tiredReach;
+            tired = true;
+        }
+        else if (condition == "normal" && tired)
+        {
+            movement = anchorMove;
+            sight = anchorSight;
+            reach = anchorReach;
+            tired = false;
         }
     }
 
