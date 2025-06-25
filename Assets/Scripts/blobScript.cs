@@ -16,11 +16,12 @@ public class blobScript : MonoBehaviour
     // hunger stats
     float maxHunger = 100.0f, hunger = 55.0f, hungerDecayRate = 2.5f, hungerThreshold = 35.0f;
     // water stats
-    float maxWater = 100.0f, water = 55.0f, waterDecayRate = 7f, waterThreshold = 40.0f;
+    float maxWater = 100.0f, water = 55.0f, waterDecayRate = 6f, waterThreshold = 35.0f;
     // reproduction stats
     float reproReach = 2f, incubationTime = 10f, reproThreshold = 60f;
     // energy stats
-    float maxEnergy = 100f, energy = 100f, energyDecayRate = 0.9f, energyRestorationRate = 9f, energyThreshold = 25f;
+    float maxEnergy = 100f, energyDecayRate = 0.9f, energyRestorationRate = 9f, energyThreshold = 25f;
+    public float energy = 100f;
     // tired stats
     float tiredMove, tiredSight, tiredReach;
     bool sleep = false, tired = false;
@@ -35,7 +36,7 @@ public class blobScript : MonoBehaviour
         gm = FindObjectsByType<gameManager>(FindObjectsSortMode.None);
         tiredMove = movement / 2;
         anchorMove = movement;
-        tiredSight = sight / 2;
+        tiredSight = sight;
         anchorSight = sight;
         tiredReach = reach / 2;
         anchorReach = reach;
@@ -55,9 +56,18 @@ public class blobScript : MonoBehaviour
         Collider2D[] withinReach = Physics2D.OverlapCircleAll(transform.position, reach);
 
         // Decrease hunger and water by decayrate
-        hunger -= hungerDecayRate;
-        water -= waterDecayRate;
-        energy -= energyDecayRate;
+        if (sleep)
+        {
+            hunger -= hungerDecayRate / 2;
+            water -= waterDecayRate / 2;
+        }
+        else
+        {
+            hunger -= hungerDecayRate;
+            water -= waterDecayRate;
+            energy -= energyDecayRate;
+        }
+        
 
         // check water first
         if (water < waterThreshold)
@@ -106,7 +116,11 @@ public class blobScript : MonoBehaviour
             checkReproduction();
         }
 
-        if (energy < energyThreshold - 10) setStats("tired");
+        if (energy < energyThreshold - 10)
+        {
+            setStats("tired");
+            Debug.Log("tired");
+        }
         else setStats("normal"); 
     }
 
@@ -215,6 +229,7 @@ public class blobScript : MonoBehaviour
             {
                 energy += energyRestorationRate;
                 if (energy > maxEnergy) energy = maxEnergy;
+                Debug.Log("Sleep");
                 return true;
             }
         }
@@ -249,10 +264,10 @@ public class blobScript : MonoBehaviour
                     reproduced = true;
                     water -= 37.0f;
                     hunger -= 37.0f;
-                    energy -= 37.0f;
+                    energy -= 20.0f;
                     otherBlob.water -= 37.0f;
                     otherBlob.hunger -= 37.0f;
-                    otherBlob.energy -= 37.0f;
+                    otherBlob.energy -= 20.0f;
                     return;
                 }
             }
