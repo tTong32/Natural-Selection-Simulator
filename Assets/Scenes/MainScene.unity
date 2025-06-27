@@ -428,11 +428,11 @@ GameObject:
   - component: {fileID: 137367323}
   m_Layer: 0
   m_Name: Cave (1)
-  m_TagString: Untagged
+  m_TagString: shelter
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &137367322
 Transform:
   m_ObjectHideFlags: 0
@@ -2478,11 +2478,11 @@ GameObject:
   - component: {fileID: 1140356134}
   m_Layer: 0
   m_Name: Cave
-  m_TagString: Untagged
+  m_TagString: shelter
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1140356133
 Transform:
   m_ObjectHideFlags: 0
@@ -3075,11 +3075,11 @@ GameObject:
   - component: {fileID: 1439201314}
   m_Layer: 0
   m_Name: Cave
-  m_TagString: Untagged
+  m_TagString: shelter
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1439201313
 Transform:
   m_ObjectHideFlags: 0

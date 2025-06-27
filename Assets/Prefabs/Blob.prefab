@@ -102,20 +102,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53a629a96d6434c498e45162b1eca5a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  circleCollider: {fileID: 2531050549691265995}
   movement: 2
   sight: 5
   reach: 0.5
-  maxHunger: 100
+  size: 0.64
+  energy: 100
   hunger: 55
-  hungerDecayRate: 2.5
-  hungerThreshold: 35
-  maxWater: 100
   water: 55
-  waterDecayRate: 7
-  waterThreshold: 40
-  reproReach: 2
-  incubationTime: 10
-  reproThreshold: 60
 --- !u!58 &2531050549691265995
 CircleCollider2D:
   m_ObjectHideFlags: 0

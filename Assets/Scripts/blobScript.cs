@@ -3,43 +3,46 @@ using UnityEngine;
 public class blobScript : MonoBehaviour
 {
     Rigidbody2D rb;
+    public CircleCollider2D circleCollider;
 
     // basic stats
-    public float movement = 2f, sight = 4f, reach = 0.5f;
-    float anchorMove, anchorSight, anchorReach;
+    float baseMovement = 2f, baseSight = 4f, baseReach = 1f, baseSize = 0.64f;
+    public float movement = 2f, sight = 4f, reach = 1f, size = 0.64f;
+    float anchorMove, anchorSight, anchorReach, anchorSize;
+
     // base basic stats
-    float baseMovement = 2f, baseSight = 4f, baseReach = 0.5f;
 
     // target stats
     float moveX = 0.0f, moveY = 0.0f;
 
     // hunger stats
-    float maxHunger = 100.0f, hunger = 55.0f, hungerDecayRate = 2.5f, hungerThreshold = 35.0f;
+    float maxHunger = 100.0f, hungerDecayRate = 3f, hungerThreshold = 35.0f;
     // water stats
-    float maxWater = 100.0f, water = 55.0f, waterDecayRate = 6f, waterThreshold = 35.0f;
+    float maxWater = 100.0f, waterDecayRate = 8f, waterThreshold = 35.0f;
     // reproduction stats
     float reproReach = 2f, incubationTime = 10f, reproThreshold = 60f;
     // energy stats
-    float maxEnergy = 100f, energyDecayRate = 0.9f, energyRestorationRate = 9f, energyThreshold = 25f;
-    public float energy = 100f;
-    // tired stats
-    float tiredMove, tiredSight, tiredReach;
-    bool sleep = false, tired = false;
+    float maxEnergy = 100f, energyDecayRate = 4f;
+    // energy costs have a cost, a threshold, and the boost%
+    float[] sightEnergyCost = {10f, 20f, 0.25f};
+    float[] decayEnergyCost = {5f, 5f, 0.15f}; // reduces decay by 20%
+    // fourth energy cost is the sprint condition for water and hunger
+    float[] movementEnergyCost = { 15f, 40f, 0.25f, 10}; // increases move by 25%
+    float energyRestorationPercent = 0.15f;
+    public float energy = 100f, hunger = 55f, water = 55f;
     bool reproduced = false;
     gameManager[] gm;
-
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         gm = FindObjectsByType<gameManager>(FindObjectsSortMode.None);
-        tiredMove = movement / 2;
+
         anchorMove = movement;
-        tiredSight = sight;
         anchorSight = sight;
-        tiredReach = reach / 2;
         anchorReach = reach;
+        anchorSize = size;
     }
 
     // Update function was deleted, but can be put back if needed for non-rigidbody functions
@@ -55,59 +58,60 @@ public class blobScript : MonoBehaviour
         reproduced = false;
         Collider2D[] withinReach = Physics2D.OverlapCircleAll(transform.position, reach);
 
-        // Decrease hunger and water by decayrate
-        if (sleep)
+        hunger -= hungerDecayRate;
+        water -= waterDecayRate;
+        energy -= energyDecayRate;
+
+        if (energy > decayEnergyCost[1])
         {
-            hunger -= hungerDecayRate / 2;
-            water -= waterDecayRate / 2;
+            energy -= decayEnergyCost[0];
+            // hunger and water increase by a percentage of decayRate
+            hunger += hungerDecayRate * decayEnergyCost[2];
+            water += waterDecayRate * decayEnergyCost[2];
         }
-        else
-        {
-            hunger -= hungerDecayRate;
-            water -= waterDecayRate;
-            energy -= energyDecayRate;
-        }
-        
+
+        if (energy < 0f) { energy = 0f; } // Prevent negative energy
 
         // check water first
         if (water < waterThreshold)
         {
-            sleep = false;
             // serves as a method to see if water is within reach
             bool drank = checkWater(withinReach);
             if (!drank)
             {
-                seek("water");
+                seek("water", false);
                 return;
             }
         }
         // If hunger is below the threshold, seek food
         else if (hunger < hungerThreshold)
         {
-            sleep = false;
             // serves as a method to see if water is within reach
             bool eaten = checkHunger(withinReach);
             if (!eaten)
             {
                 // If blob has not eaten
-                seek("food");
+                seek("food", false);
                 return;
             }
         }
-        else if ((energy < energyThreshold || sleep) && energy < maxEnergy)
+        /*
+        // energy is less than 30% of maxEnergy
+        else if (energy < maxEnergy * 0.3f)
         {
-            sleep = checkSleep(withinReach);
+            bool sleep = checkShelter(withinReach);
             if (!sleep)
             {
-                seek("shelter");
+                // If blob has not slept, seek shelter
+                seek("shelter", false);
                 return;
             }
         }
+        */
         else
         {
-            sleep = false;
             // Otherwise, wander randomly
-            wander();
+            wander(false);
             return;
         }
 
@@ -115,41 +119,63 @@ public class blobScript : MonoBehaviour
         {
             checkReproduction();
         }
-
-        if (energy < energyThreshold - 10)
-        {
-            setStats("tired");
-            Debug.Log("tired");
-        }
-        else setStats("normal"); 
     }
 
     void move()
     {
-        // it takes turnTime to move destination
         Vector2 target = new Vector2(moveX, moveY);
+        float distance = Vector2.Distance(rb.position, target);
         Vector2 newPos = Vector2.MoveTowards(rb.position, target, movement * Time.fixedDeltaTime);
         rb.MovePosition(newPos);
     }
 
-    void wander()
+    // wander function to wander randomly
+    void wander(bool seeking)
     {
-        // change the x and y destination of the blob
         float angle = Random.Range(0f, 2 * Mathf.PI);
-        moveX = transform.position.x + Mathf.Cos(angle) * movement;
-        moveY = transform.position.y + Mathf.Sin(angle) * movement;
+        if (seeking)
+        {
+            moveX = transform.position.x + Mathf.Cos(angle) * movement;
+            moveY = transform.position.y + Mathf.Sin(angle) * movement;
+        }
+        else
+        {
+            // the lowered amount of movement is equivalent to how much energy blob is missing
+            // blob gains more energy when stats are being lowered more
+            float energyFactor = energy / maxEnergy;
+            // restore 20% of missing energy
+            energy += (maxEnergy - energy) * energyRestorationPercent;
+            moveX = transform.position.x + Mathf.Cos(angle) * movement * energyFactor;
+            moveY = transform.position.y + Mathf.Sin(angle) * movement * energyFactor;
+        }
     }
 
-    void wander(float angle)
+    // wander function used for targets
+    void wander(float angle, bool farfromTarget)
     {
-        moveX = transform.position.x + Mathf.Cos(angle) * movement;
-        moveY = transform.position.y + Mathf.Sin(angle) * movement;
+        if ((farfromTarget && energy > movementEnergyCost[1]) || (energy > movementEnergyCost[0] && (water < movementEnergyCost[3] || hunger < movementEnergyCost[3])))
+        {
+            energy -= movementEnergyCost[0];
+            moveX = transform.position.x + Mathf.Cos(angle) * movement * (1 + movementEnergyCost[2]);
+            moveY = transform.position.y + Mathf.Sin(angle) * movement * (1 + movementEnergyCost[2]);
+        }
+        else
+        {
+            moveX = transform.position.x + Mathf.Cos(angle) * movement;
+            moveY = transform.position.y + Mathf.Sin(angle) * movement;
+        }
+        
     }
 
-    void seek(string tag)
+    void seek(string tag, bool enhancedSearch)
     {
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, sight);
-
+        Collider2D[] colliders;
+        if (enhancedSearch)
+        {
+            colliders = Physics2D.OverlapCircleAll(transform.position, sight * (1 + sightEnergyCost[2]));
+        }
+        else { colliders = Physics2D.OverlapCircleAll(transform.position, sight); } 
+        
         Collider2D closest = null;
         float closestDistance = float.MaxValue;
 
@@ -170,11 +196,18 @@ public class blobScript : MonoBehaviour
         {
             Vector2 direction = closest.transform.position - transform.position;
             float angle = Mathf.Atan2(direction.y, direction.x);
-            wander(angle);
+            // check if destination is within movement range
+            if (closestDistance >= movement) wander(angle, true);
+            else wander(angle, false);
         }
         else
         {
-            wander();
+            if (energy > sightEnergyCost[1] && !enhancedSearch)
+            {
+                energy -= sightEnergyCost[0];
+                seek(tag, true);
+            }
+            else wander(true);
         }
     }
 
@@ -198,6 +231,7 @@ public class blobScript : MonoBehaviour
                 if (collider.TryGetComponent<bushScript>(out var bush) && bush.numFruits > 0)
                 {
                     energy -= 15f;
+                    if (energy < 0f) { energy = 0f; } // Prevent negative energy
                     hunger += bush.eaten();
                     if (hunger > maxHunger) hunger = maxHunger; // Cap the hunger at maxHunger
                     return true;
@@ -213,23 +247,7 @@ public class blobScript : MonoBehaviour
         {
             if (collider.CompareTag("water"))
             {
-                energy -= 12f;
                 water = maxWater;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    bool checkSleep(Collider2D[] withinReach)
-    {
-        foreach (Collider2D collider in withinReach)
-        {
-            if (collider.CompareTag("shelter"))
-            {
-                energy += energyRestorationRate;
-                if (energy > maxEnergy) energy = maxEnergy;
-                Debug.Log("Sleep");
                 return true;
             }
         }
@@ -238,7 +256,7 @@ public class blobScript : MonoBehaviour
 
     public bool checkReproductionConditions()
     {
-        if (hunger > reproThreshold && water > reproThreshold && energy > reproThreshold && reproduced == false)
+        if (hunger > reproThreshold && water > reproThreshold && reproduced == false)
         {
             return true;
         }
@@ -257,58 +275,33 @@ public class blobScript : MonoBehaviour
                 if (otherBlob.checkReproductionConditions())
                 {
                     Debug.Log("Success");
-                    gm[0].blobReproduction(returnPosition(),
-                                            otherBlob.returnPosition(),
-                                            returnStats(),
-                                            otherBlob.returnStats());
+                    gm[0].StartCoroutine(
+                        gm[0].blobReproduction(
+                            returnPosition(),
+                            otherBlob.returnPosition(),
+                            returnStats(),
+                            otherBlob.returnStats()
+                        )
+                    );
                     reproduced = true;
-                    water -= 37.0f;
-                    hunger -= 37.0f;
-                    energy -= 20.0f;
-                    otherBlob.water -= 37.0f;
-                    otherBlob.hunger -= 37.0f;
-                    otherBlob.energy -= 20.0f;
+                    water -= 20.0f;
+                    hunger -= 20.0f;
+                    otherBlob.water -= 20.0f;
+                    otherBlob.hunger -= 20.0f;
                     return;
                 }
             }
         }
     }
 
-    void setStats(string condition)
-    {
-        if (condition == "tired" && !tired)
-        {
-            movement = tiredMove;
-            sight = tiredSight;
-            reach = tiredReach;
-            tired = true;
-        }
-        else if (condition == "normal" && tired)
-        {
-            movement = anchorMove;
-            sight = anchorSight;
-            reach = anchorReach;
-            tired = false;
-        }
-    }
-
     float[] returnStats()
     {
-        float[] stats = new float[4];
+        float[] stats = new float[5];
         stats[0] = movement;
         stats[1] = sight;
         stats[2] = reach;
         stats[3] = incubationTime;
-        /*
-        stats[3] = maxHunger;
-        stats[4] = hungerDecayRate;
-        stats[5] = hungerThreshold;
-        stats[6] = maxWater;
-        stats[7] = waterDecayRate;
-        stats[8] = waterThreshold;
-        stats[9] = reproReach;
-        stats[10] = incubationTime;
-        */
+        stats[4] = size;
         return stats;
     }
 
@@ -318,24 +311,33 @@ public class blobScript : MonoBehaviour
         sight = stats[1];
         reach = stats[2];
         incubationTime = stats[3];
-        /*
-        maxHunger = stats[3];
-        hungerDecayRate = stats[4];
-        hungerThreshold = stats[5];
-        maxWater = stats[6];
-        waterDecayRate = stats[7];
-        waterThreshold = stats[8];
-        reproReach = stats[9];
-        incubationTime = stats[10];
-        */
+        size = stats[4];
 
-        // decay rates are inversely proportional to movement
-        hungerDecayRate = baseMovement / movement * hungerDecayRate;
-        waterDecayRate = baseMovement / movement * waterDecayRate;
+        float moveFactor = movement / baseMovement;
+        float sightFactor = sight / baseSight;
+        float reachFactor = reach / baseReach;
+        float sizeFactor = size / baseSize;
 
-        // Thresholds are inversely proportional to sight
-        hungerThreshold = baseSight / sight * hungerThreshold;
-        waterThreshold = baseSight / sight * waterThreshold;
+        // set blob size
+        circleCollider.radius = size;
+        transform.localScale = new Vector3(0.5f * sizeFactor, 0.5f * sizeFactor, 1f);
+
+        hungerDecayRate *= moveFactor * sizeFactor;
+        waterDecayRate *= moveFactor * sizeFactor;
+        energyDecayRate *= sightFactor * sizeFactor;
+
+        hungerThreshold *= sizeFactor;
+        waterThreshold *= sizeFactor;
+        reproThreshold *= sizeFactor;
+
+        maxWater *= sizeFactor;
+        maxHunger *= sizeFactor;
+        maxEnergy *= sightFactor * sizeFactor;
+
+        reach *= sizeFactor;
+        movement *= sizeFactor;
+        incubationTime *= sizeFactor;
+        
     }
 
     float[] returnPosition()

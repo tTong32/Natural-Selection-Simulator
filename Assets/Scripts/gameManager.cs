@@ -49,6 +49,13 @@ public class gameManager : MonoBehaviour
         }
     }
 
+    public IEnumerator blobReproduction(float[] b1pos, float[] b2pos, float[] b1stats, float[] b2stats)
+    {
+        yield return new WaitForSeconds((b1stats[3] + b2stats[3]) / 2);
+        Debug.Log("Spawn");
+        spawnBlob((b1pos[0] + b2pos[0]) / 2, (b1pos[1] + b1pos[1]) / 2, b1stats, b2stats);
+    }
+
     void spawnBlob(float x, float y, float[] b1stats, float[] b2stats)
     {
         int n = b1stats.Length;
@@ -67,12 +74,6 @@ public class gameManager : MonoBehaviour
         GameObject newBlob = Instantiate(blobPrefab, new Vector3(x, y, 0), Quaternion.identity, mainScene.transform);
         blobScript blob = newBlob.GetComponent<blobScript>();
         blobList.Add(blob);
-    }
-
-    public IEnumerator blobReproduction(float[] b1pos, float[] b2pos, float[] b1stats, float[] b2stats)
-    {
-        yield return new WaitForSeconds((b1stats[3] + b2stats[3]) / 2);
-        spawnBlob((b1pos[0] + b2pos[0]) / 2, (b1pos[1] + b1pos[1]) / 2, b1stats, b2stats);
     }
 
     float returnReproductionOffset()
