@@ -13,7 +13,7 @@ public class blobScript : MonoBehaviour
     // base basic stats
 
     // target stats
-    float moveX = 0.0f, moveY = 0.0f;
+    float moveX = 0.0f, moveY = 0.0f, speed = 0.0f;
 
     // hunger stats
     float maxHunger = 100.0f, hungerDecayRate = 3f, hungerThreshold = 35.0f;
@@ -27,7 +27,7 @@ public class blobScript : MonoBehaviour
     float[] sightEnergyCost = {10f, 20f, 0.25f};
     float[] decayEnergyCost = {5f, 5f, 0.15f}; // reduces decay by 20%
     // fourth energy cost is the sprint condition for water and hunger
-    float[] movementEnergyCost = { 15f, 40f, 0.25f, 10}; // increases move by 25%
+    float[] movementEnergyCost = { 15f, 40f, 0.15f, 10}; // increases move by 25%
     float energyRestorationPercent = 0.15f;
     public float energy = 100f, hunger = 55f, water = 55f;
     bool reproduced = false;
@@ -50,6 +50,7 @@ public class blobScript : MonoBehaviour
     void FixedUpdate()
     {
         move();
+
     }
 
     public void turn()
@@ -80,7 +81,6 @@ public class blobScript : MonoBehaviour
             if (!drank)
             {
                 seek("water", false);
-                return;
             }
         }
         // If hunger is below the threshold, seek food
@@ -92,7 +92,6 @@ public class blobScript : MonoBehaviour
             {
                 // If blob has not eaten
                 seek("food", false);
-                return;
             }
         }
         /*
@@ -104,7 +103,6 @@ public class blobScript : MonoBehaviour
             {
                 // If blob has not slept, seek shelter
                 seek("shelter", false);
-                return;
             }
         }
         */
@@ -112,21 +110,28 @@ public class blobScript : MonoBehaviour
         {
             // Otherwise, wander randomly
             wander(false);
-            return;
         }
 
         if (checkReproductionConditions())
         {
             checkReproduction();
         }
+
+        setSpeed();
     }
 
     void move()
     {
         Vector2 target = new Vector2(moveX, moveY);
-        float distance = Vector2.Distance(rb.position, target);
-        Vector2 newPos = Vector2.MoveTowards(rb.position, target, movement * Time.fixedDeltaTime);
+        Vector2 newPos = Vector2.MoveTowards(rb.position, target, speed * Time.fixedDeltaTime);
         rb.MovePosition(newPos);
+    }
+
+    void setSpeed()
+    {
+        Vector2 target = new Vector2(moveX, moveY);
+        float distance = Vector2.Distance(rb.position, target);
+        speed = distance;
     }
 
     // wander function to wander randomly

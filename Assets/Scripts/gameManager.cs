@@ -27,7 +27,6 @@ public class gameManager : MonoBehaviour
                       Random.Range(-initialBlobSpawnOffset, initialBlobSpawnOffset));
         }
         StartCoroutine(TurnLoop());
-
     }
 
     IEnumerator TurnLoop()
@@ -35,18 +34,23 @@ public class gameManager : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(turntime);
-            // Logic for turning the blob can be added here
-            blobScript[] blob = FindObjectsByType<blobScript>(FindObjectsSortMode.None);
-            turnsUntilGraph--;
-            numberOfTurns++;
-            if (turnsUntilGraph <= 0)
-            {
-                graphScript.UpdateData(blobList);
-                turnsUntilGraph = graphInterval;
-            }
-
-            foreach (blobScript b in blob) { b.turn(); }
+            turn();
         }
+    }
+
+    void turn()
+    {
+        // Logic for a blob turn can be added here
+        blobScript[] blob = FindObjectsByType<blobScript>(FindObjectsSortMode.None);
+        turnsUntilGraph--;
+        numberOfTurns++;
+        if (turnsUntilGraph <= 0)
+        {
+            graphScript.UpdateData(blobList);
+            turnsUntilGraph = graphInterval;
+        }
+
+        foreach (blobScript b in blob) { b.turn(); }
     }
 
     public IEnumerator blobReproduction(float[] b1pos, float[] b2pos, float[] b1stats, float[] b2stats)
