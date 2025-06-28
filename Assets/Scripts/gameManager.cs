@@ -46,6 +46,7 @@ public class gameManager : MonoBehaviour
         numberOfTurns++;
         if (turnsUntilGraph <= 0)
         {
+            Debug.Log("Graph Update");
             graphScript.UpdateData(blobList);
             turnsUntilGraph = graphInterval;
         }
