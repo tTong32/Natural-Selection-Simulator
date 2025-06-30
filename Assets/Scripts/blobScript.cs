@@ -270,7 +270,7 @@ public class blobScript : MonoBehaviour
             {
                 hidden = true;
                 ren.enabled = false;
-                rb.enabled = false;
+                rb.simulated = false;
                 circleCollider.enabled = false;
             }
         }
@@ -281,7 +281,7 @@ public class blobScript : MonoBehaviour
             {
                 hidden = false;
                 ren.enabled = true;
-                rb.enabled = true;
+                rb.simulated = true;
                 circleCollider.enabled = true;
             }
         }
