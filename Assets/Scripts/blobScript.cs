@@ -4,11 +4,11 @@ public class blobScript : MonoBehaviour
 {
     Rigidbody2D rb;
     public CircleCollider2D circleCollider;
+    Renderer ren;
 
     // basic stats
     float baseMovement = 2f, baseSight = 4f, baseReach = 1f, baseSize = 0.64f;
     public float movement = 2f, sight = 4f, reach = 1f, size = 0.64f;
-    float anchorMove, anchorSight, anchorReach, anchorSize;
 
     // base basic stats
 
@@ -22,15 +22,19 @@ public class blobScript : MonoBehaviour
     // reproduction stats
     float reproReach = 2f, incubationTime = 10f, reproThreshold = 60f;
     // energy stats
-    float maxEnergy = 100f, energyDecayRate = 4f;
-    // energy costs have a cost, a threshold, and the boost%
+    float maxEnergy = 100f, energyDecayRate = 4f, energyRestorationPercent = 0.15f;
+    
+    // tired and sleep modifiers have the current and anchor stat
+    // tired reduces move by 30%, sleep reduces decay by 50%
+    float[] tiredFactor = { 1f, 0.3f }, sleepFactor = { 1f, 0.5f };
+
+    // energy costs have a cost, a threshold, and the boost
     float[] sightEnergyCost = {10f, 20f, 0.25f};
     float[] decayEnergyCost = {5f, 5f, 0.15f}; // reduces decay by 20%
     // fourth energy cost is the sprint condition for water and hunger
     float[] movementEnergyCost = { 15f, 40f, 0.15f, 10}; // increases move by 25%
-    float energyRestorationPercent = 0.15f;
     public float energy = 100f, hunger = 55f, water = 55f;
-    bool reproduced = false;
+    bool reproduced = false, sleep = false, hidden = false;
     gameManager[] gm;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -38,11 +42,7 @@ public class blobScript : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         gm = FindObjectsByType<gameManager>(FindObjectsSortMode.None);
-
-        anchorMove = movement;
-        anchorSight = sight;
-        anchorReach = reach;
-        anchorSize = size;
+        ren = GetComponent<Renderer>();
     }
 
     // Update function was deleted, but can be put back if needed for non-rigidbody functions
@@ -50,7 +50,6 @@ public class blobScript : MonoBehaviour
     void FixedUpdate()
     {
         move();
-
     }
 
     public void turn()
@@ -59,11 +58,11 @@ public class blobScript : MonoBehaviour
         reproduced = false;
         Collider2D[] withinReach = Physics2D.OverlapCircleAll(transform.position, reach);
 
-        hunger -= hungerDecayRate;
-        water -= waterDecayRate;
-        energy -= energyDecayRate;
+        hunger -= hungerDecayRate * sleepFactor[0];
+        water -= waterDecayRate * sleepFactor[0];
+        if (!sleep) energy -= energyDecayRate;
 
-        if (energy > decayEnergyCost[1])
+        if (energy > decayEnergyCost[1] && !sleep)
         {
             energy -= decayEnergyCost[0];
             // hunger and water increase by a percentage of decayRate
@@ -78,45 +77,28 @@ public class blobScript : MonoBehaviour
         {
             // serves as a method to see if water is within reach
             bool drank = checkWater(withinReach);
-            if (!drank)
-            {
-                seek("water", false);
-            }
+            if (!drank) seek("water", false);
         }
         // If hunger is below the threshold, seek food
         else if (hunger < hungerThreshold)
         {
             // serves as a method to see if water is within reach
             bool eaten = checkHunger(withinReach);
-            if (!eaten)
-            {
-                // If blob has not eaten
-                seek("food", false);
-            }
+            if (!eaten) seek("food", false);
         }
-        /*
+        
         // energy is less than 30% of maxEnergy
-        else if (energy < maxEnergy * 0.3f)
+        else if (energy < maxEnergy * 0.3f || sleep)
         {
-            bool sleep = checkShelter(withinReach);
-            if (!sleep)
-            {
-                // If blob has not slept, seek shelter
-                seek("shelter", false);
-            }
+            sleep = checkShelter(withinReach);
+            if (!sleep) seek("shelter", false);
         }
-        */
-        else
-        {
-            // Otherwise, wander randomly
-            wander(false);
-        }
+        
+        else wander(false);  // otherwise, wander randomly
 
-        if (checkReproductionConditions())
-        {
-            checkReproduction();
-        }
-
+        if (checkReproductionConditions()) checkReproduction();
+        checkSleep();
+        checkTired();
         setSpeed();
     }
 
@@ -138,10 +120,11 @@ public class blobScript : MonoBehaviour
     void wander(bool seeking)
     {
         float angle = Random.Range(0f, 2 * Mathf.PI);
+        float range = movement * tiredFactor[0];
         if (seeking)
         {
-            moveX = transform.position.x + Mathf.Cos(angle) * movement;
-            moveY = transform.position.y + Mathf.Sin(angle) * movement;
+            moveX = transform.position.x + Mathf.Cos(angle) * range;
+            moveY = transform.position.y + Mathf.Sin(angle) * range;
         }
         else
         {
@@ -150,26 +133,26 @@ public class blobScript : MonoBehaviour
             float energyFactor = energy / maxEnergy;
             // restore 20% of missing energy
             energy += (maxEnergy - energy) * energyRestorationPercent;
-            moveX = transform.position.x + Mathf.Cos(angle) * movement * energyFactor;
-            moveY = transform.position.y + Mathf.Sin(angle) * movement * energyFactor;
+            moveX = transform.position.x + Mathf.Cos(angle) * range * energyFactor;
+            moveY = transform.position.y + Mathf.Sin(angle) * range * energyFactor;
         }
     }
 
     // wander function used for targets
     void wander(float angle, bool farfromTarget)
     {
+        float range = movement * tiredFactor[0];
         if ((farfromTarget && energy > movementEnergyCost[1]) || (energy > movementEnergyCost[0] && (water < movementEnergyCost[3] || hunger < movementEnergyCost[3])))
         {
             energy -= movementEnergyCost[0];
-            moveX = transform.position.x + Mathf.Cos(angle) * movement * (1 + movementEnergyCost[2]);
-            moveY = transform.position.y + Mathf.Sin(angle) * movement * (1 + movementEnergyCost[2]);
+            moveX = transform.position.x + Mathf.Cos(angle) * range * (1 + movementEnergyCost[2]);
+            moveY = transform.position.y + Mathf.Sin(angle) * range * (1 + movementEnergyCost[2]);
         }
         else
         {
-            moveX = transform.position.x + Mathf.Cos(angle) * movement;
-            moveY = transform.position.y + Mathf.Sin(angle) * movement;
+            moveX = transform.position.x + Mathf.Cos(angle) * range;
+            moveY = transform.position.y + Mathf.Sin(angle) * range;
         }
-        
     }
 
     void seek(string tag, bool enhancedSearch)
@@ -259,6 +242,15 @@ public class blobScript : MonoBehaviour
         return false;
     }
 
+    bool checkShelter(Collider2D[] withinReach)
+    {
+        foreach (Collider2D collider in withinReach)
+        {
+            if (collider.CompareTag("shelter")) return true;
+        }
+        return false;
+    }
+
     public bool checkReproductionConditions()
     {
         if (hunger > reproThreshold && water > reproThreshold && reproduced == false)
@@ -266,6 +258,39 @@ public class blobScript : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    void checkSleep()
+    {
+        if (sleep)
+        {
+            sleepFactor[0] = sleepFactor[1];
+            energy += maxEnergy * (1+energyRestorationPercent);
+            if (!hidden)
+            {
+                hidden = true;
+                ren.enabled = false;
+                rb.enabled = false;
+                circleCollider.enabled = false;
+            }
+        }
+        else
+        {
+            sleepFactor[0] = 1f;
+            if (hidden)
+            {
+                hidden = false;
+                ren.enabled = true;
+                rb.enabled = true;
+                circleCollider.enabled = true;
+            }
+        }
+        // sleep recovers energyRestorationPercent of maxEnergy
+    }
+    void checkTired()
+    {
+        if (energy < maxEnergy * 0.15f) tiredFactor[0] = tiredFactor[1];
+        else tiredFactor[0] = 1f;
     }
 
     void checkReproduction()
