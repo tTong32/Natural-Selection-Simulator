@@ -342,7 +342,6 @@ public class blobScript : MonoBehaviour
         reach *= sizeFactor;
         movement *= sizeFactor;
         incubationTime *= sizeFactor;
-        
     }
 
     float[] returnPosition()

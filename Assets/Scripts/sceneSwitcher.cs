@@ -10,6 +10,8 @@ public class sceneSwitcher : MonoBehaviour
     public GameObject mainScene;
     public GameObject graphScene;
     public TMP_Text buttonText;
+    public Camera camera;
+    Color graphColor, mainColor;
     public string currentScene = "main";
 
     void Start()
@@ -44,6 +46,10 @@ public class sceneSwitcher : MonoBehaviour
             renderer.enabled = true;
         }
 
+        if (ColorUtility.TryParseHtmlString("#BABABA", out graphColor))
+        {
+            camera.backgroundColor = graphColor;
+        }
         buttonText.text = "Back";
     }
 
@@ -58,7 +64,11 @@ public class sceneSwitcher : MonoBehaviour
         {
             renderer.enabled = false;
         }
-        
+
+        if (ColorUtility.TryParseHtmlString("#314D79", out mainColor))
+        {
+            camera.backgroundColor = mainColor;
+        }
         buttonText.text = "Graphs";
     }
 
