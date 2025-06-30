@@ -5,6 +5,8 @@ public class blobScript : MonoBehaviour
     Rigidbody2D rb;
     public CircleCollider2D circleCollider;
     Renderer ren;
+    gameManager[] gm;
+    shelterScript shelter;
 
     // basic stats
     float baseMovement = 2f, baseSight = 4f, baseReach = 1f, baseSize = 0.64f;
@@ -26,7 +28,7 @@ public class blobScript : MonoBehaviour
     
     // tired and sleep modifiers have the current and anchor stat
     // tired reduces move by 30%, sleep reduces decay by 50%
-    float[] tiredFactor = { 1f, 0.3f }, sleepFactor = { 1f, 0.5f };
+    float[] tiredFactor = { 1f, 0.8f }, sleepFactor = { 1f, 0.65f };
 
     // energy costs have a cost, a threshold, and the boost
     float[] sightEnergyCost = {10f, 20f, 0.25f};
@@ -35,7 +37,6 @@ public class blobScript : MonoBehaviour
     float[] movementEnergyCost = { 15f, 40f, 0.15f, 10}; // increases move by 25%
     public float energy = 100f, hunger = 55f, water = 55f;
     bool reproduced = false, sleep = false, hidden = false;
-    gameManager[] gm;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -43,6 +44,7 @@ public class blobScript : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         gm = FindObjectsByType<gameManager>(FindObjectsSortMode.None);
         ren = GetComponent<Renderer>();
+        shelter = null;
     }
 
     // Update function was deleted, but can be put back if needed for non-rigidbody functions
@@ -61,6 +63,7 @@ public class blobScript : MonoBehaviour
         hunger -= hungerDecayRate * sleepFactor[0];
         water -= waterDecayRate * sleepFactor[0];
         if (!sleep) energy -= energyDecayRate;
+        sleep = false;
 
         if (energy > decayEnergyCost[1] && !sleep)
         {
@@ -86,20 +89,22 @@ public class blobScript : MonoBehaviour
             bool eaten = checkHunger(withinReach);
             if (!eaten) seek("food", false);
         }
-        
+
         // energy is less than 30% of maxEnergy
         else if (energy < maxEnergy * 0.3f || sleep)
         {
             sleep = checkShelter(withinReach);
             if (!sleep) seek("shelter", false);
         }
-        
-        else wander(false);  // otherwise, wander randomly
 
-        if (checkReproductionConditions()) checkReproduction();
+        else wander(false, "none");  // otherwise, wander randomly
+
         checkSleep();
         checkTired();
         setSpeed();
+
+        if (checkReproductionConditions() && !sleep) checkReproduction();
+        else if (checkReproductionConditions() && sleep) checkReproductionShelter();
     }
 
     void move()
@@ -112,12 +117,13 @@ public class blobScript : MonoBehaviour
     void setSpeed()
     {
         Vector2 target = new Vector2(moveX, moveY);
-        float distance = Vector2.Distance(rb.position, target);
-        speed = distance;
+        if (rb == null) Debug.LogError("RB not found");
+        else if (target == null) Debug.LogError("Target not found");
+        else speed = Vector2.Distance(rb.position, target);
     }
 
     // wander function to wander randomly
-    void wander(bool seeking)
+    void wander(bool seeking, string tag)
     {
         float angle = Random.Range(0f, 2 * Mathf.PI);
         float range = movement * tiredFactor[0];
@@ -125,6 +131,14 @@ public class blobScript : MonoBehaviour
         {
             moveX = transform.position.x + Mathf.Cos(angle) * range;
             moveY = transform.position.y + Mathf.Sin(angle) * range;
+            if (tag == "shelter")
+            {
+                float energyFactor = energy / maxEnergy;
+                // restore some missing energy
+                energy += (maxEnergy - energy) * energyRestorationPercent;
+                moveX = transform.position.x + Mathf.Cos(angle) * range * energyFactor;
+                moveY = transform.position.y + Mathf.Sin(angle) * range * energyFactor;
+            }
         }
         else
         {
@@ -171,11 +185,28 @@ public class blobScript : MonoBehaviour
         {
             if (collider.CompareTag(tag))
             {
-                float dist = Vector2.Distance(transform.position, collider.transform.position);
-                if (dist < closestDistance)
+                if (tag == "shelter")
                 {
-                    closestDistance = dist;
-                    closest = collider;
+                    shelterScript shelter = collider.GetComponent<shelterScript>();
+                    if (size < shelter.capacity && size < shelter.sizeCondition)
+                    {
+                        float dist = Vector2.Distance(transform.position, collider.transform.position);
+                        if (dist < closestDistance)
+                        {
+                            closestDistance = dist;
+                            closest = collider;
+                        }
+                    }
+                    else continue;
+                }
+                else
+                {
+                    float dist = Vector2.Distance(transform.position, collider.transform.position);
+                    if (dist < closestDistance)
+                    {
+                        closestDistance = dist;
+                        closest = collider;
+                    }
                 }
             }
         }
@@ -195,7 +226,7 @@ public class blobScript : MonoBehaviour
                 energy -= sightEnergyCost[0];
                 seek(tag, true);
             }
-            else wander(true);
+            else wander(true, tag);
         }
     }
 
@@ -246,7 +277,14 @@ public class blobScript : MonoBehaviour
     {
         foreach (Collider2D collider in withinReach)
         {
-            if (collider.CompareTag("shelter")) return true;
+            if (collider.CompareTag("shelter"))
+            {
+                shelter = collider.GetComponent<shelterScript>();
+                if (size < shelter.capacity && size < shelter.sizeCondition)
+                {
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -265,13 +303,15 @@ public class blobScript : MonoBehaviour
         if (sleep)
         {
             sleepFactor[0] = sleepFactor[1];
-            energy += maxEnergy * (1+energyRestorationPercent);
+            energy += maxEnergy * energyRestorationPercent;
+            if (energy > maxEnergy) energy = maxEnergy; // Cap the energy at maxEnergy
             if (!hidden)
             {
                 hidden = true;
                 ren.enabled = false;
-                rb.enabled = false;
+                rb.simulated = false;
                 circleCollider.enabled = false;
+                shelter.enter(size, GetComponent<blobScript>());
             }
         }
         else
@@ -281,15 +321,17 @@ public class blobScript : MonoBehaviour
             {
                 hidden = false;
                 ren.enabled = true;
-                rb.enabled = true;
+                rb.simulated = true;
                 circleCollider.enabled = true;
+                shelter.exit(size, GetComponent<blobScript>());
+                shelter = null;
             }
         }
         // sleep recovers energyRestorationPercent of maxEnergy
     }
     void checkTired()
     {
-        if (energy < maxEnergy * 0.15f) tiredFactor[0] = tiredFactor[1];
+        if (energy <= 0) tiredFactor[0] = tiredFactor[1];
         else tiredFactor[0] = 1f;
     }
 
@@ -320,6 +362,31 @@ public class blobScript : MonoBehaviour
                     otherBlob.hunger -= 20.0f;
                     return;
                 }
+            }
+        }
+    }
+
+    void checkReproductionShelter()
+    {
+        foreach (blobScript blob in shelter.blobsInside)
+        {
+            if (blob.checkReproductionConditions() && blob != this)
+            {
+                Debug.Log("Success");
+                gm[0].StartCoroutine(
+                    gm[0].blobReproduction(
+                        returnPosition(),
+                        blob.returnPosition(),
+                        returnStats(),
+                        blob.returnStats()
+                    )
+                );
+                reproduced = true;
+                water -= 20.0f;
+                hunger -= 20.0f;
+                blob.water -= 20.0f;
+                blob.hunger -= 20.0f;
+                return;
             }
         }
     }
