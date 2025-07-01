@@ -7,8 +7,8 @@ public class gameManager : MonoBehaviour
     float turntime = 1.0f;
     float initialBlobSpawnOffset = 2.0f;
 
-    // every 25 turns, put a point on the graph
-    int graphInterval = 25;
+    // every 15 seconds, put a point on the graph
+    int graphInterval = 15;
     int turnsUntilGraph = 0;
     public int numberOfTurns = 0;
     public GameObject blobPrefab;
@@ -41,7 +41,6 @@ public class gameManager : MonoBehaviour
     void turn()
     {
         // Logic for a blob turn can be added here
-        blobScript[] blob = FindObjectsByType<blobScript>(FindObjectsSortMode.None);
         turnsUntilGraph--;
         numberOfTurns++;
         if (turnsUntilGraph <= 0)
@@ -51,14 +50,14 @@ public class gameManager : MonoBehaviour
             turnsUntilGraph = graphInterval;
         }
 
-        foreach (blobScript b in blob) { b.turn(); }
+        foreach (blobScript b in new List<blobScript>(blobList)) { b.turn(); }
     }
 
     public IEnumerator blobReproduction(float[] b1pos, float[] b2pos, float[] b1stats, float[] b2stats)
     {
         yield return new WaitForSeconds((b1stats[3] + b2stats[3]) / 2);
         Debug.Log("Spawn");
-        spawnBlob((b1pos[0] + b2pos[0]) / 2, (b1pos[1] + b1pos[1]) / 2, b1stats, b2stats);
+        spawnBlob((b1pos[0] + b2pos[0]) / 2, (b1pos[1] + b2pos[1]) / 2, b1stats, b2stats);
     }
 
     void spawnBlob(float x, float y, float[] b1stats, float[] b2stats)
@@ -106,6 +105,14 @@ public class gameManager : MonoBehaviour
         if (sceneSwitch.currentScene != "main")
         {
             obj.GetComponent<Renderer>().enabled = false;
+        }
+    }
+
+    public void checkScene(blobScript blob)
+    {
+        if (sceneSwitch.currentScene != "main")
+        {
+            blob.GetComponent<Renderer>().enabled = false;
         }
     }
 }

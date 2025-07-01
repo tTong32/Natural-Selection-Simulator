@@ -45,6 +45,7 @@ public class blobScript : MonoBehaviour
         gm = FindObjectsByType<gameManager>(FindObjectsSortMode.None);
         ren = GetComponent<Renderer>();
         shelter = null;
+        wander(false, "none");
     }
 
     // Update function was deleted, but can be put back if needed for non-rigidbody functions
@@ -311,7 +312,7 @@ public class blobScript : MonoBehaviour
                 ren.enabled = false;
                 rb.simulated = false;
                 circleCollider.enabled = false;
-                shelter.enter(size, GetComponent<blobScript>());
+                shelter.enter(size, this);
             }
         }
         else
@@ -323,8 +324,9 @@ public class blobScript : MonoBehaviour
                 ren.enabled = true;
                 rb.simulated = true;
                 circleCollider.enabled = true;
-                shelter.exit(size, GetComponent<blobScript>());
+                shelter.exit(size, this);
                 shelter = null;
+                gm[0].checkScene(this);
             }
         }
         // sleep recovers energyRestorationPercent of maxEnergy

@@ -6,7 +6,7 @@ public class graphScript : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public LineRenderer lineRenderer;
     int numPoints = 100;
-    float width = 10f, height = 7f;
+    float width = 20f, height = 7f;
     float lineWidth = 0.1f;
     // these data points act as queues
     Queue<int> numBlobs = new Queue<int>();
@@ -50,14 +50,13 @@ public class graphScript : MonoBehaviour
             int i = 0;
             foreach (int yValue in numBlobs)
             {
-                float x = (float)i / (float)(count - 1) * (float)(width / count);
+                float x = -10f + (float)i / (count - 1) * width;
                 float y = (float)yValue / numBlobsMax * height;  // Adjust scaling as needed
                 lineRenderer.SetPosition(i, new Vector3(x, y, 0));
 
                 GameObject point = Instantiate(pointPrefab, new Vector3(x, y, 0), Quaternion.identity, graphScene.transform);
                 checkScene(point);
                 points.Add(point);
-
                 i++;
                 if (i >= count) break;
             }
