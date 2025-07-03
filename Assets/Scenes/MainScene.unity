@@ -927,6 +927,7 @@ Transform:
   - {fileID: 219152661}
   - {fileID: 1512760491}
   - {fileID: 18066850}
+  - {fileID: 1710800346}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &575979532
@@ -1242,6 +1243,9 @@ MonoBehaviour:
   graphScene: {fileID: 598754768}
   sceneSwitch: {fileID: 803482138}
   pointPrefab: {fileID: 5153982884695835935, guid: f8d59e504b182f049a6a7c7b4d919888, type: 3}
+  axisPrefab: {fileID: 6581723499988401951, guid: 9872adad252061a45877bf1f02d4a0c5, type: 3}
+  axisLabelPrefab: {fileID: 6276718419695913351, guid: 610a0c150eea10a4aa8b8004402dbfca, type: 3}
+  axisTickPrefab: {fileID: 6581723499988401951, guid: a4df711cfbcf9594f8ecc4d9c181f0ab, type: 3}
 --- !u!120 &677404007
 LineRenderer:
   serializedVersion: 2
@@ -4051,11 +4055,11 @@ Transform:
   m_GameObject: {fileID: 1710800342}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 5.5693, y: 6.1189, z: 0}
+  m_LocalPosition: {x: 5.5693, y: 6.1189, z: 10}
   m_LocalScale: {x: 0.660815, y: 1.0936853, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 542224948}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1807807376
 GameObject:
@@ -5339,4 +5343,3 @@ SceneRoots:
   - {fileID: 2118399555}
   - {fileID: 542224948}
   - {fileID: 598754769}
-  - {fileID: 1710800346}

@@ -46,6 +46,11 @@ public class sceneSwitcher : MonoBehaviour
             renderer.enabled = true;
         }
 
+        foreach (var text in graphScene.GetComponentsInChildren<TMP_Text>())
+        {
+            text.enabled = true;
+        }
+
         if (ColorUtility.TryParseHtmlString("#BABABA", out graphColor))
         {
             camera.backgroundColor = graphColor;
