@@ -7,11 +7,14 @@ public class graphScript : MonoBehaviour
     public LineRenderer lineRenderer;
     int numPoints = 100;
     float width = 20f, height = 7f;
+    float xTranslate = 0f, yTranslate = 0f;
     float lineWidth = 0.1f;
     // these data points act as queues
 
-    Queue<int> numBlobs = new Queue<int>();
-    int numBlobsMax = 0;
+    Queue<int> statListInt = new Queue<int>();
+    int maxValueInt = 0;
+    Queue<float> statListFloat = new Queue<float>();
+    float maxValueFloat = 0f;
 
     List<GameObject> points = new List<GameObject>();
     List<TMPro.TextMeshPro> yLabels = new List<TMPro.TextMeshPro>();
@@ -32,11 +35,11 @@ public class graphScript : MonoBehaviour
         lineRenderer.endColor = Color.black;
 
         // Initialize the axis
-        GameObject xAxis = Instantiate(axisPrefab, new Vector3(0, 0, 0), Quaternion.identity, graphScene.transform);
+        GameObject xAxis = Instantiate(axisPrefab, new Vector3(xTranslate, yTranslate, 0), Quaternion.identity, this.transform);
         xAxis.transform.localScale = new Vector3(width, 0.1f, 1f);
         checkScene(xAxis);
 
-        GameObject yAxis = Instantiate(axisPrefab, new Vector3(-10f, height / 2, 0), Quaternion.identity, graphScene.transform);
+        GameObject yAxis = Instantiate(axisPrefab, new Vector3(-10f + xTranslate, yTranslate + height / 2, 0), Quaternion.identity, this.transform);
         yAxis.transform.localScale = new Vector3(0.1f, height, 1f);
         checkScene(yAxis);
         
@@ -49,10 +52,15 @@ public class graphScript : MonoBehaviour
 
     }
 
-    public void UpdateData(List<blobScript> blobList)
+    public void UpdateData(int data)
     {
-        numBlobsMax = manageQueue(numBlobs, numBlobsMax, blobList.Count);
+        maxValueInt = manageQueue(statListInt, maxValueInt, data);
+        UpdateGraph();
+    }
 
+    public void UpdateData(float data)
+    {
+        maxValueFloat = manageQueue(statListFloat, maxValueFloat, data);
         UpdateGraph();
     }
 
@@ -61,18 +69,18 @@ public class graphScript : MonoBehaviour
         foreach (var p in points) Destroy(p);
         points.Clear();
 
-        int count = Mathf.Min(numPoints, numBlobs.Count);
+        int count = Mathf.Min(numPoints, statListInt.Count);
         if (count > 1)
         {
             lineRenderer.positionCount = count;
             int i = 0;
-            foreach (int yValue in numBlobs)
+            foreach (int yValue in statListInt)
             {
-                float x = -10f + (float)i / (count - 1) * width;
-                float y = (float)yValue / numBlobsMax * height;  // Adjust scaling as needed
+                float x = -10f + xTranslate + (float)i / (count - 1) * width;
+                float y = yTranslate + (float)yValue / maxValueInt * height;  // Adjust scaling as needed
                 lineRenderer.SetPosition(i, new Vector3(x, y, 0));
 
-                GameObject point = Instantiate(pointPrefab, new Vector3(x, y, 0), Quaternion.identity, graphScene.transform);
+                GameObject point = Instantiate(pointPrefab, new Vector3(x, y, 0), Quaternion.identity, this.transform);
                 checkScene(point);
                 points.Add(point);
                 i++;
@@ -81,7 +89,7 @@ public class graphScript : MonoBehaviour
         }
         else
         {
-            GameObject point = Instantiate(pointPrefab, new Vector3(-10, height, 0), Quaternion.identity, graphScene.transform);
+            GameObject point = Instantiate(pointPrefab, new Vector3(-10 + xTranslate, height + yTranslate, 0), Quaternion.identity, this.transform);
             checkScene(point);
             points.Add(point);
         }
@@ -94,22 +102,20 @@ public class graphScript : MonoBehaviour
         float labelInterval = height / (numLabels - 1);
         for (int i = 0; i < numLabels; i++)
         {
-            float y = i * labelInterval;
+            float y = yTranslate + i * labelInterval;
+            float x = -10.5f + xTranslate;
         
-            GameObject label = Instantiate(axisLabelPrefab, new Vector3(-10.5f, y, 0), Quaternion.identity, graphScene.transform);
+            GameObject label = Instantiate(axisLabelPrefab, new Vector3(x, y, 0), Quaternion.identity, this.transform);
             checkScene(label);
             TMPro.TextMeshPro text = label.GetComponent<TMPro.TextMeshPro>();
-            text.text = $"{i * (numBlobsMax / (numLabels - 1))}";
+            text.text = $"{i * (maxValueInt / (numLabels - 1))}";
             text.color = Color.black;
-            Color c = text.color;
-            c.a = 1f;
-            text.color = c;
             
             yLabels.Add(text);
 
             if (i != 0)
             {
-                GameObject tick = Instantiate(axisTickPrefab, new Vector3(-10f, y, 0), Quaternion.identity, graphScene.transform);
+                GameObject tick = Instantiate(axisTickPrefab, new Vector3(-10f + xTranslate, y, 0), Quaternion.identity, this.transform);
                 checkScene(tick);
             }
         }
@@ -120,23 +126,23 @@ public class graphScript : MonoBehaviour
         int n = yLabels.Count;
         for (int i = 0; i < n; i++)
         {
-            yLabels[i].text = $"{i * (numBlobsMax / (n - 1))}";
+            yLabels[i].text = $"{i * (maxValueInt / (n - 1))}";
         }
     }
 
-    float manageQueue(Queue<float> dataQueue, float maxValue, float value)
+    float manageQueue(Queue<float> dataQueue, float maxValueInt, float value)
     {
         if (dataQueue.Count >= numPoints) dataQueue.Dequeue(); // Remove the oldest value
         dataQueue.Enqueue(value);
-        if (value > maxValue) maxValue = value;
-        return maxValue;
+        if (value > maxValueInt) maxValueInt = value;
+        return maxValueInt;
     }
-    int manageQueue(Queue<int> dataQueue, int maxValue, int value)
+    int manageQueue(Queue<int> dataQueue, int maxValueInt, int value)
     {
         if (dataQueue.Count >= numPoints) dataQueue.Dequeue(); // Remove the oldest value
         dataQueue.Enqueue(value);
-        if (value > maxValue) maxValue = value;
-        return maxValue;
+        if (value > maxValueInt) maxValueInt = value;
+        return maxValueInt;
     }
 
     void checkScene(GameObject obj)

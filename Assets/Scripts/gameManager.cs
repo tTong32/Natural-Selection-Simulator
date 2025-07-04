@@ -15,7 +15,7 @@ public class gameManager : MonoBehaviour
     public GameObject mainScene;
     public sceneSwitcher sceneSwitch;
     public graphScript graphScript;
-    List<blobScript> blobList;
+    public List<blobScript> blobList;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -46,7 +46,7 @@ public class gameManager : MonoBehaviour
         if (turnsUntilGraph <= 0)
         {
             Debug.Log("Graph Update");
-            graphScript.UpdateData(blobList);
+            graphScript.UpdateData(blobList.Count);
             turnsUntilGraph = graphInterval;
         }
 
