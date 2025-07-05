@@ -393,7 +393,7 @@ public class blobScript : MonoBehaviour
         }
     }
 
-    float[] returnStats()
+    public float[] returnStats()
     {
         float[] stats = new float[5];
         stats[0] = movement;

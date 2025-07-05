@@ -19,8 +19,8 @@ public class graphScript : MonoBehaviour
     List<GameObject> points = new List<GameObject>();
     List<TMPro.TextMeshPro> yLabels = new List<TMPro.TextMeshPro>();
 
-    public GameObject graphScene;
-    public sceneSwitcher sceneSwitch;
+    GameObject graphScene;
+    sceneSwitcher sceneSwitch;
     public GameObject pointPrefab;
     public GameObject axisPrefab;
     public GameObject axisLabelPrefab;
@@ -34,6 +34,10 @@ public class graphScript : MonoBehaviour
         lineRenderer.startColor = Color.black;
         lineRenderer.endColor = Color.black;
 
+        // find gameObjects
+        graphScene = GameObject.Find("GraphScene");
+        sceneSwitch = GameObject.Find("SceneSwitcher").GetComponent<sceneSwitcher>();
+
         // Initialize the axis
         GameObject xAxis = Instantiate(axisPrefab, new Vector3(xTranslate, yTranslate, 0), Quaternion.identity, this.transform);
         xAxis.transform.localScale = new Vector3(width, 0.1f, 1f);
@@ -42,7 +46,9 @@ public class graphScript : MonoBehaviour
         GameObject yAxis = Instantiate(axisPrefab, new Vector3(-10f + xTranslate, yTranslate + height / 2, 0), Quaternion.identity, this.transform);
         yAxis.transform.localScale = new Vector3(0.1f, height, 1f);
         checkScene(yAxis);
-        
+
+        checkScene(gameObject);
+
         DrawYAxisLabels(5);
     }
 
@@ -55,16 +61,16 @@ public class graphScript : MonoBehaviour
     public void UpdateData(int data)
     {
         maxValueInt = manageQueue(statListInt, maxValueInt, data);
-        UpdateGraph();
+        UpdateGraphInt();
     }
 
     public void UpdateData(float data)
     {
         maxValueFloat = manageQueue(statListFloat, maxValueFloat, data);
-        UpdateGraph();
+        UpdateGraphFloat();
     }
 
-    void UpdateGraph()
+    void UpdateGraphInt()
     {
         foreach (var p in points) Destroy(p);
         points.Clear();
@@ -94,8 +100,41 @@ public class graphScript : MonoBehaviour
             points.Add(point);
         }
 
-        updateTicks();
+        updateTicksInt();
     }
+
+        void UpdateGraphFloat()
+        {
+            foreach (var p in points) Destroy(p);
+            points.Clear();
+
+            int count = Mathf.Min(numPoints, statListFloat.Count);
+        if (count > 1)
+        {
+            lineRenderer.positionCount = count;
+            int i = 0;
+            foreach (float yValue in statListFloat)
+            {
+                float x = -10f + xTranslate + (float)i / (count - 1) * width;
+                float y = yTranslate + (float)yValue / maxValueFloat * height;  // Adjust scaling as needed
+                lineRenderer.SetPosition(i, new Vector3(x, y, 0));
+
+                GameObject point = Instantiate(pointPrefab, new Vector3(x, y, 0), Quaternion.identity, this.transform);
+                checkScene(point);
+                points.Add(point);
+                i++;
+                if (i >= count) break;
+            }
+        }
+        else
+        {
+            GameObject point = Instantiate(pointPrefab, new Vector3(-10 + xTranslate, height + yTranslate, 0), Quaternion.identity, this.transform);
+            checkScene(point);
+            points.Add(point);
+        }
+
+            updateTicksFloat();
+        }
 
     void DrawYAxisLabels(int numLabels)
     {
@@ -104,13 +143,13 @@ public class graphScript : MonoBehaviour
         {
             float y = yTranslate + i * labelInterval;
             float x = -10.5f + xTranslate;
-        
+
             GameObject label = Instantiate(axisLabelPrefab, new Vector3(x, y, 0), Quaternion.identity, this.transform);
             checkScene(label);
             TMPro.TextMeshPro text = label.GetComponent<TMPro.TextMeshPro>();
             text.text = $"{i * (maxValueInt / (numLabels - 1))}";
             text.color = Color.black;
-            
+
             yLabels.Add(text);
 
             if (i != 0)
@@ -121,7 +160,7 @@ public class graphScript : MonoBehaviour
         }
     }
 
-    void updateTicks()
+    void updateTicksInt()
     {
         int n = yLabels.Count;
         for (int i = 0; i < n; i++)
@@ -130,12 +169,21 @@ public class graphScript : MonoBehaviour
         }
     }
 
-    float manageQueue(Queue<float> dataQueue, float maxValueInt, float value)
+    void updateTicksFloat()
+    {
+        int n = yLabels.Count;
+        for (int i = 0; i < n; i++)
+        {
+            yLabels[i].text = $"{i * (maxValueFloat / (float)(n - 1)):0.000}";
+        }
+    }
+
+    float manageQueue(Queue<float> dataQueue, float maxValueFloat, float value)
     {
         if (dataQueue.Count >= numPoints) dataQueue.Dequeue(); // Remove the oldest value
         dataQueue.Enqueue(value);
-        if (value > maxValueInt) maxValueInt = value;
-        return maxValueInt;
+        if (value > maxValueFloat) maxValueFloat = value;
+        return maxValueFloat;
     }
     int manageQueue(Queue<int> dataQueue, int maxValueInt, int value)
     {
@@ -161,5 +209,11 @@ public class graphScript : MonoBehaviour
                     tmp.enabled = false;
             }
         }
+    }
+
+    public void setCenter(float x, float y)
+    {
+        xTranslate = x;
+        yTranslate = y;
     }
 }
