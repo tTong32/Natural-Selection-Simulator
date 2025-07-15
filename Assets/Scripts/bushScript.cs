@@ -4,8 +4,8 @@ using System.Collections;
 public class bushScript : MonoBehaviour
 {
     public int numFruits;
-    float hungerValue = 70.0f;
     float fruitGrowthTime = 10.0f;
+    public float hungerValue = 0.0f;
     SpriteRenderer spriteRenderer;
     Sprite[] bushSprites;
 
@@ -15,6 +15,7 @@ public class bushScript : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         bushSprites = Resources.LoadAll<Sprite>("Bush");
         StartCoroutine(GrowLoop());
+        hungerValue = Random.Range(40f, 60f);
     }
 
     // Update is called once per frame
@@ -35,11 +36,15 @@ public class bushScript : MonoBehaviour
         }
     }
 
-    public float eaten()
+    public void eaten()
     {
         numFruits--;
         spriteRenderer.sprite = bushSprites[numFruits];
         if (numFruits == 0) gameObject.tag = "not food";
+    }
+
+    public float returnHungerValue()
+    {
         return hungerValue;
     }
 

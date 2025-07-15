@@ -11,12 +11,15 @@ public class sceneSwitcher : MonoBehaviour
     public GameObject graphScene;
     public TMP_Text buttonText;
     public Camera camera;
+    float mainCameraSize;
+    float graphCameraSize = 10;
     Color graphColor, mainColor;
     public string currentScene = "main";
 
     void Start()
     {
         SwitchToMain();
+        mainCameraSize = camera.orthographicSize;
     }
 
     public void SwitchScene()
@@ -55,6 +58,7 @@ public class sceneSwitcher : MonoBehaviour
         {
             camera.backgroundColor = graphColor;
         }
+        camera.orthographicSize = graphCameraSize;
         buttonText.text = "Back";
     }
 
@@ -75,6 +79,7 @@ public class sceneSwitcher : MonoBehaviour
             camera.backgroundColor = mainColor;
         }
         buttonText.text = "Graphs";
+        camera.orthographicSize = mainCameraSize;
     }
 
 }

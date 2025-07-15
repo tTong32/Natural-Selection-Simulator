@@ -31,7 +31,7 @@ public class gameManager : MonoBehaviour
     void Start()
     {
         blobList = new List<blobScript>();
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 10; i++)
         {
             spawnBlob(Random.Range(-initialBlobSpawnOffset, initialBlobSpawnOffset),
                       Random.Range(-initialBlobSpawnOffset, initialBlobSpawnOffset));
@@ -44,11 +44,16 @@ public class gameManager : MonoBehaviour
         blobNumGraph = numBlobs.GetComponent<graphScript>();
         blobNumGraph.setCenter(0, 0);
 
+        int j = 0;
         for (int i = 0; i < numReturnedStats; i++)
         {
-            GameObject newGraph = Instantiate(graphPrefab, new Vector3(0, 0, 0), Quaternion.identity, graphScene.transform);
-            blobStatGraphs.Add(newGraph.GetComponent<graphScript>());
-            blobStatGraphs[i].setCenter(0, -8f);
+            if (!checkIgnoreStats(i)) // Skip hunger, water, energy, and thresholds
+            {
+                GameObject newGraph = Instantiate(graphPrefab, new Vector3(0, 0, 0), Quaternion.identity, graphScene.transform);
+                blobStatGraphs.Add(newGraph.GetComponent<graphScript>());
+                blobStatGraphs[j].setCenter(0, -8f);
+                j++;
+            }
         }
     }
 
@@ -71,14 +76,20 @@ public class gameManager : MonoBehaviour
             Debug.Log("Graph Update");
             blobNumGraph.UpdateData(blobList.Count);
             blobStatAverages = returnAverage();
+
+            int j = 0;
             for (int i = 0; i < numReturnedStats; i++)
             {
-                blobStatGraphs[i].UpdateData(blobStatAverages[i]);
+                if (!checkIgnoreStats(i))
+                {
+                    blobStatGraphs[j].UpdateData(blobStatAverages[i]);
+                    j++;
+                }
             }
             turnsUntilGraph = graphInterval;
         }
 
-        foreach (blobScript b in new List<blobScript>(blobList)) { b.turn(); }
+        foreach (blobScript b in new List<blobScript>(blobList)) { b.decay(1f); }
     }
 
     public IEnumerator blobReproduction(float[] b1pos, float[] b2pos, float[] b1stats, float[] b2stats)
@@ -93,8 +104,20 @@ public class gameManager : MonoBehaviour
         GameObject newBlob = Instantiate(blobPrefab, new Vector3(x, y, 0), Quaternion.identity, mainScene.transform);
         blobScript blob = newBlob.GetComponent<blobScript>();
         float[] newBlobStats = new float[numReturnedStats];
-        for (int i = 0; i < numReturnedStats; i++) { newBlobStats[i] = (b1stats[i] + b2stats[i]) / 2 * returnReproductionOffset(); }
-        blob.setStats(newBlobStats);
+        float[] parentAvgStats = new float[numReturnedStats];
+        for (int i = 0; i < numReturnedStats; i++)
+        {
+            parentAvgStats[i] = (b1stats[i] + b2stats[i]) / 2;
+            if (checkIgnoreStats(i)) newBlobStats[i] = parentAvgStats[i];
+            else if (i == 15)
+            {
+                newBlobStats[i] = parentAvgStats[i] + Random.Range(-0.07f, 0.07f);
+                if (newBlobStats[i] <= 0) newBlobStats[i] = 0.0001f;
+                else if (newBlobStats[i] >= 1) newBlobStats[i] = 0.9999f;
+            }
+            else newBlobStats[i] = parentAvgStats[i] * returnReproductionOffset();
+        }
+        blob.setStats(newBlobStats, parentAvgStats);
         blobList.Add(blob);
         checkScene(newBlob);
         return;
@@ -124,6 +147,7 @@ public class gameManager : MonoBehaviour
     public void removeBlob(blobScript blob)
     {
         blobList.Remove(blob);
+        Debug.Log("Dead");
         Destroy(blob.gameObject);
     }
 
@@ -142,7 +166,6 @@ public class gameManager : MonoBehaviour
             blob.GetComponent<Renderer>().enabled = false;
         }
     }
-
     float[] returnAverage()
     {
         int n = blobList.Count;
@@ -157,8 +180,14 @@ public class gameManager : MonoBehaviour
         }
 
         for (int i = 0; i < numReturnedStats; i++)
-                avg[i] /= (float)n;
+            avg[i] /= (float)n;
 
         return avg;
+    }
+
+    bool checkIgnoreStats(int i)
+    {
+        // Skip hunger, water, energy, and thresholds
+        return i >= 6 && i <= 14;
     }
 }
