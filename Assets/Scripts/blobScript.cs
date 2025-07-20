@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -22,7 +23,13 @@ public class blobScript : MonoBehaviour
     // water stats
     float maxWater = 100.0f, waterDecayRate = 7f, waterThreshold = 35.0f;
     // reproduction stats
-    float incubationTime = 10f, reproThreshold = 55f;
+    // maturation time is the amount of turns it takes for the blob to fully grow up
+    float incubationTime = 5f, reproThreshold = 55f, maturationTime = 20f, age = 21f, ageFactor = 1f, currentSize = 0.64f;
+    blobScript mother = null, father = null;
+    float liveAloneFactor = 0.75f;
+    public List<blobScript> children = new List<blobScript>();
+    public string gender = "none";
+    float[] pregnancyFactor = { 1f, 0.6f };
     // energy stats
     float maxEnergy = 100f, energyDecayRate = 2f, energyRestorationPercent = 0.15f;
 
@@ -39,8 +46,8 @@ public class blobScript : MonoBehaviour
     float predation = 0.07f;
     int[] predationTimer = { 0, 3 };
     public blobScript prey;
-    public List<blobScript> predators;
-    List<bool> noticedPredators;
+    public List<blobScript> predators = new List<blobScript>();
+    List<bool> noticedPredators = new List<bool>();
 
     bool reproduced = false, sleep = false, hidden = false;
 
@@ -73,18 +80,29 @@ public class blobScript : MonoBehaviour
             wander(prey.transform.position);
             setSpeed();
         }
+        if (isChild() && mother != null)
+        {
+            wander(mother.transform.position);
+            setSpeed();
+        }
         move();
     }
 
     void turn()
     {
-        decay(0.25f);
+        decay(0.35f);
         reproduced = false;
-        Collider2D[] withinReach = Physics2D.OverlapCircleAll(transform.position, reach);
+        Collider2D[] withinReach = Physics2D.OverlapCircleAll(transform.position, reach * ageFactor);
         int numPredators = noticePredators();
 
+        if (isChild() && mother != null)
+        {
+            mother.decay(0.5f * ageFactor);
+            eat(mother.size * 10 / 3 * ageFactor);
+        }
+
         // blobs that have a prey will lock on for three turns
-        if (predationTimer[0] > 0)
+        else if (predationTimer[0] > 0)
         {
             if (prey != null)
             {
@@ -127,30 +145,33 @@ public class blobScript : MonoBehaviour
         else wander(false, "none");  // otherwise, wander randomly
 
         if (energy > maxEnergy) energy = maxEnergy;
-        if (energy < 0) energy = 0; 
+        if (energy < 0) energy = 0;
 
-        checkSleep();
+        checkSleep(sleep);
         checkTired();
         setSpeed();
+        growUp();
 
         if (checkReproductionConditions() && !sleep) checkReproduction();
         else if (checkReproductionConditions() && sleep) checkReproductionShelter();
+        age++;
     }
 
     public void decay(float turnFactor)
     {
         checkDeath();
-        hunger -= hungerDecayRate * sleepFactor[0] * turnFactor;
-        water -= waterDecayRate * sleepFactor[0] * turnFactor;
-        if (!sleep) energy -= energyDecayRate * turnFactor;
+        float decayFactor = turnFactor * ageFactor;
+        hunger -= hungerDecayRate * sleepFactor[0] * decayFactor;
+        water -= waterDecayRate * sleepFactor[0] * decayFactor;
+        if (!sleep) energy -= energyDecayRate * decayFactor;
         sleep = false;
 
         if (energy > decayEnergyCost[1] && !sleep)
         {
             energy -= decayEnergyCost[0];
             // hunger and water increase by a percentage of decayRate
-            hunger += hungerDecayRate * decayEnergyCost[2] * turnFactor;
-            water += waterDecayRate * decayEnergyCost[2] * turnFactor;
+            hunger += hungerDecayRate * decayEnergyCost[2] * decayFactor;
+            water += waterDecayRate * decayEnergyCost[2] * decayFactor;
         }
 
         if (energy < 0f) { energy = 0f; } // Prevent negative energy
@@ -158,10 +179,36 @@ public class blobScript : MonoBehaviour
 
     void move()
     {
+        // 1) Check for NaN in your intended target
+        if (float.IsNaN(moveX) || float.IsNaN(moveY))
+        {
+            moveX = rb.position.x;
+            moveY = rb.position.y;
+        }
+
         Vector2 target = new Vector2(moveX, moveY);
-        Vector2 newPos = Vector2.MoveTowards(rb.position, target, speed * Time.fixedDeltaTime);
+        Vector2 current = rb.position;
+
+        // 2) Check for NaN in current position
+        if (float.IsNaN(current.x) || float.IsNaN(current.y))
+        {
+            Debug.LogError($"Rigidbody2D.position is NaN: {current}");
+            return;
+        }
+
+        // 3) Calculate new position
+        Vector2 newPos = Vector2.MoveTowards(current, target, speed * Time.fixedDeltaTime);
+
+        // 4) Check result before applying
+        if (float.IsNaN(newPos.x) || float.IsNaN(newPos.y))
+        {
+            Debug.LogError($"Computed newPos is NaN: {newPos}");
+            return;
+        }
+
         rb.MovePosition(newPos);
     }
+
 
     void setSpeed()
     {
@@ -175,7 +222,7 @@ public class blobScript : MonoBehaviour
     void wander(bool seeking, string tag)
     {
         float angle = Random.Range(0f, 2 * Mathf.PI);
-        float range = movement * tiredFactor[0];
+        float range = movement * tiredFactor[0] * pregnancyFactor[0] * ageFactor;
         if (seeking)
         {
             moveX = transform.position.x + Mathf.Cos(angle) * range;
@@ -205,7 +252,7 @@ public class blobScript : MonoBehaviour
     // this function makes no sense???
     void wander(float angle, bool farfromTarget)
     {
-        float range = movement * tiredFactor[0];
+        float range = movement * tiredFactor[0] * pregnancyFactor[0] * ageFactor;
         if ((farfromTarget && energy > movementEnergyCost[1]) || (energy > movementEnergyCost[0] && (water < movementEnergyCost[3] || hunger < movementEnergyCost[3])))
         {
             energy -= movementEnergyCost[0];
@@ -224,7 +271,7 @@ public class blobScript : MonoBehaviour
 
     void wander(Vector3 target)
     {
-        float range = movement * tiredFactor[0];
+        float range = movement * tiredFactor[0] * pregnancyFactor[0] * ageFactor;
         float distance = Vector2.Distance(transform.position, target);
         bool farFromTarget = range < distance;
 
@@ -255,7 +302,7 @@ public class blobScript : MonoBehaviour
             }
             else
             {
-                 moveX = target.x;
+                moveX = target.x;
                 moveY = target.y;
                 energy += (maxEnergy - energy) / (1 - (distance / range));
             }
@@ -268,9 +315,9 @@ public class blobScript : MonoBehaviour
 
         if (enhancedSearch)
         {
-            colliders = Physics2D.OverlapCircleAll(transform.position, sight * (1 + sightEnergyCost[2]));
+            colliders = Physics2D.OverlapCircleAll(transform.position, sight * (1 + sightEnergyCost[2]) * ageFactor);
         }
-        else { colliders = Physics2D.OverlapCircleAll(transform.position, sight); }
+        else { colliders = Physics2D.OverlapCircleAll(transform.position, sight * ageFactor); }
 
         bool targetBlobs = false;
         blobScript blobPrey = null;
@@ -291,7 +338,7 @@ public class blobScript : MonoBehaviour
                 if (tag == "shelter")
                 {
                     shelterScript shelter = collider.GetComponent<shelterScript>();
-                    if (size < shelter.capacity && size < shelter.sizeCondition)
+                    if (currentSize < shelter.capacity && currentSize < shelter.sizeCondition)
                     {
                         if (dist < closestDistance)
                         {
@@ -333,11 +380,13 @@ public class blobScript : MonoBehaviour
                 // if a blob is detected
                 else if (detectBlob)
                 {
-                    if (dist < closestDistanceBlob)
+                    blobScript detectedBlob = collider.GetComponent<blobScript>();
+                    bool family = detectedBlob == mother || detectedBlob == father || children.Contains(detectedBlob);
+                    if (dist < closestDistanceBlob && !family)
                     {
                         closestDistanceBlob = dist;
                         closestBlob = collider;
-                        blobPrey = collider.GetComponent<blobScript>();
+                        blobPrey = detectedBlob;
                     }
                 }
                 else
@@ -436,9 +485,11 @@ public class blobScript : MonoBehaviour
             }
             else if (collider.CompareTag("blob"))
             {
-                if (collider.TryGetComponent<blobScript>(out var otherBlob) && hunger < maxHunger * predation)
+                blobScript detectedBlob = collider.GetComponent<blobScript>();
+                bool family = detectedBlob == mother || detectedBlob == father || children.Contains(detectedBlob);
+                if (collider.TryGetComponent<blobScript>(out var otherBlob) && hunger < maxHunger * predation && !family)
                 {
-                    float hungerValue = otherBlob.size * 100f;
+                    float hungerValue = otherBlob.currentSize * 100f;
                     if (maxHungerValue < hungerValue)
                     {
                         maxHungerValue = hungerValue;
@@ -456,7 +507,7 @@ public class blobScript : MonoBehaviour
 
         if (maxHungerValue > 0.0f)
         {
-            hunger += maxHungerValue;
+            eat(maxHungerValue);
             if (hunger > maxHunger) hunger = maxHunger; // Cap the hunger at maxHunger
             return true;
         }
@@ -473,14 +524,25 @@ public class blobScript : MonoBehaviour
             {
                 if (collider.TryGetComponent<blobScript>(out var otherBlob) == prey)
                 {
-                    float hungerValue = otherBlob.size * 100f;
-                    hunger += hungerValue;
-                    if (hunger > maxHunger) hunger = maxHunger;
+                    float hungerValue = otherBlob.currentSize * 100f;
+                    eat(hungerValue);
                     predationTimer[0] = 0;
                     return;
                 }
             }
         }
+    }
+
+    public bool isChild()
+    {
+        // returns true if blob is allowed to leave mother
+        return age <= maturationTime * liveAloneFactor;
+    }
+
+    public void eat(float hungerValue)
+    {
+        hunger += hungerValue;
+        if (hunger > maxHunger) hunger = maxHunger;
     }
 
     bool checkWater(Collider2D[] withinReach)
@@ -489,11 +551,23 @@ public class blobScript : MonoBehaviour
         {
             if (collider.CompareTag("water"))
             {
-                water = maxWater;
+                if (gender == "female")
+                {
+                    foreach (blobScript child in children)
+                    {
+                        if (child.isChild()) child.drink();
+                    }
+                }
+                drink();
                 return true;
             }
         }
         return false;
+    }
+
+    public void drink()
+    {
+        water = maxWater;
     }
 
     bool checkShelter(Collider2D[] withinReach)
@@ -503,9 +577,9 @@ public class blobScript : MonoBehaviour
             if (collider.CompareTag("shelter"))
             {
                 shelter = collider.GetComponent<shelterScript>();
-                if (size < shelter.capacity && size < shelter.sizeCondition)
+                if (currentSize < shelter.capacity && currentSize < shelter.sizeCondition)
                 {
-                    foreach (blobScript p in predators)
+                    foreach (blobScript p in predators.ToList())
                     {
                         p.prey = null;
                         removePredators(p);
@@ -519,16 +593,16 @@ public class blobScript : MonoBehaviour
 
     public bool checkReproductionConditions()
     {
-        if (hunger > reproThreshold && water > reproThreshold && reproduced == false)
+        if (hunger > reproThreshold && water > reproThreshold && reproduced == false && age > maturationTime)
         {
             return true;
         }
         return false;
     }
 
-    void checkSleep()
+    public void checkSleep(bool isSleeping)
     {
-        if (sleep)
+        if (isSleeping)
         {
             sleepFactor[0] = sleepFactor[1];
             energy += maxEnergy * energyRestorationPercent;
@@ -539,7 +613,17 @@ public class blobScript : MonoBehaviour
                 ren.enabled = false;
                 rb.simulated = false;
                 circleCollider.enabled = false;
-                shelter.enter(size, this);
+                shelter.enter(currentSize, this);
+                if (gender == "female")
+                {
+                    foreach (blobScript c in children) {
+                        if (c.isChild())
+                        {
+                            c.setSleep(true, shelter);
+                            c.checkSleep(true);
+                        }
+                    }
+                }
             }
         }
         else
@@ -551,12 +635,28 @@ public class blobScript : MonoBehaviour
                 ren.enabled = true;
                 rb.simulated = true;
                 circleCollider.enabled = true;
-                shelter.exit(size, this);
+                shelter.exit(currentSize, this);
                 shelter = null;
                 gm[0].checkScene(this);
+                if (gender == "female")
+                {
+                    foreach (blobScript c in children) {
+                        if (c.isChild())
+                        {
+                            c.setSleep(false, shelter);
+                            c.checkSleep(false);
+                        }
+                    }
+                }
             }
         }
         // sleep recovers energyRestorationPercent of maxEnergy
+    }
+
+    public void setSleep(bool isSleeping, shelterScript shelter)
+    {
+        sleep = isSleeping;
+        this.shelter = shelter;
     }
     void checkTired()
     {
@@ -572,23 +672,21 @@ public class blobScript : MonoBehaviour
         {
             if (collider.CompareTag("blob") && collider.gameObject != this.gameObject)
             {
-                blobScript otherBlob = collider.GetComponent<blobScript>();
-                if (otherBlob.checkReproductionConditions())
+                blobScript blob = collider.GetComponent<blobScript>();
+                if (blob.checkReproductionConditions() && gender != blob.gender)
                 {
                     Debug.Log("Success");
                     gm[0].StartCoroutine(
                         gm[0].blobReproduction(
-                            returnPosition(),
-                            otherBlob.returnPosition(),
-                            returnStats(),
-                            otherBlob.returnStats()
+                            returnStats(), blob.returnStats(),
+                            this, blob
                         )
                     );
                     reproduced = true;
                     water -= 20.0f;
                     hunger -= 20.0f;
-                    otherBlob.water -= 20.0f;
-                    otherBlob.hunger -= 20.0f;
+                    blob.water -= 20.0f;
+                    blob.hunger -= 20.0f;
                     return;
                 }
             }
@@ -599,15 +697,13 @@ public class blobScript : MonoBehaviour
     {
         foreach (blobScript blob in shelter.blobsInside)
         {
-            if (blob.checkReproductionConditions() && blob != this)
+            if (blob.checkReproductionConditions() && blob != this && gender != blob.gender)
             {
                 Debug.Log("Success");
                 gm[0].StartCoroutine(
                     gm[0].blobReproduction(
-                        returnPosition(),
-                        blob.returnPosition(),
-                        returnStats(),
-                        blob.returnStats()
+                        returnStats(), blob.returnStats(),
+                        this, blob
                     )
                 );
                 reproduced = true;
@@ -620,9 +716,35 @@ public class blobScript : MonoBehaviour
         }
     }
 
+    // use logistic growth model
+    void growUp()
+    {
+        if (age <= maturationTime)
+        {
+            // uses 0.75x^4 + 0.25
+            // returns a ratio, with x being the maturation% of the blob
+            // this ratio is the % of the blobs currentSize compared to its final size
+            currentSize = size * (0.75f * Mathf.Pow(age / maturationTime, 1.8f) + 0.25f);
+            circleCollider.radius = currentSize;
+            transform.localScale = new Vector3(0.5f * currentSize / 0.64f, 0.5f * currentSize / 0.64f, 1f);
+            ageFactor = currentSize / size;
+    
+        }
+    }
+
+    public void startPregnancy()
+    {
+        pregnancyFactor[0] = pregnancyFactor[1];
+    }
+
+    public void endPregnancy()
+    {
+        pregnancyFactor[0] = 1f;
+    }
+
     public float[] returnStats()
     {
-        float[] stats = new float[16];
+        float[] stats = new float[18];
         stats[0] = movement;
         stats[1] = sight;
         stats[2] = reach;
@@ -639,10 +761,12 @@ public class blobScript : MonoBehaviour
         stats[13] = waterThreshold;
         stats[14] = reproThreshold;
         stats[15] = predation;
+        stats[16] = maturationTime;
+        stats[17] = liveAloneFactor;
         return stats;
     }
 
-    public void setStats(float[] stats, float[] baseStats)
+    public void setStats(float[] stats, float[] baseStats, blobScript dad, blobScript mom)
     {
         movement = stats[0];
         sight = stats[1];
@@ -660,18 +784,27 @@ public class blobScript : MonoBehaviour
         waterThreshold = stats[13];
         reproThreshold = stats[14];
         predation = stats[15];
+        maturationTime = stats[16];
+        liveAloneFactor = stats[17];
+
+        father = dad;
+        mother = mom;
+        age = 0f;
+        ageFactor = 0.25f;
 
         float moveFactor = movement / baseStats[0];
         float sightFactor = sight / baseStats[1];
         float reachFactor = reach / baseStats[2];
         float sizeFactor = size / baseStats[4];
         float turnFactor = turnTime / baseStats[5];
+        float maturationFactor = maturationTime / baseStats[16];
 
         float basicStatSizeFactor = Mathf.Pow(sizeFactor, 1.2f);
 
         // set blob size
-        circleCollider.radius = size;
-        transform.localScale = new Vector3(0.5f * sizeFactor, 0.5f * sizeFactor, 1f);
+        currentSize = size * 0.25f;
+        circleCollider.radius = currentSize;
+        transform.localScale = new Vector3(0.5f * currentSize / 0.64f, 0.5f * currentSize / 0.64f, 1f);
 
         hungerDecayRate *= moveFactor * sizeFactor * (1 / Mathf.Pow(turnFactor, 2f));
         waterDecayRate *= moveFactor * sizeFactor * (1 / Mathf.Pow(turnFactor, 2f));
@@ -685,14 +818,16 @@ public class blobScript : MonoBehaviour
         maxHunger *= sizeFactor;
         maxEnergy *= 1 / sightFactor * sizeFactor;
 
-        reach *= sizeFactor;
-        movement *= sizeFactor * Mathf.Pow(turnFactor, 1.5f);
-        incubationTime *= sizeFactor * turnFactor;
+        reach *= sizeFactor * maturationFactor;
+        movement *= sizeFactor * Mathf.Pow(turnFactor, 1.5f) * maturationFactor;
+        incubationTime *= sizeFactor * turnFactor * (1 / maturationFactor);
         turnTime *= reachFactor * moveFactor;
-
+        size *= maturationFactor;
+        maturationTime = Mathf.Round(maturationTime);
     }
+    
 
-    float[] returnPosition()
+    public float[] returnPosition()
     {
         float[] position = new float[2];
         position[0] = transform.position.x;

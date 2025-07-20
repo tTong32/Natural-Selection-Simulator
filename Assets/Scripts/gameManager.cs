@@ -19,6 +19,8 @@ public class gameManager : MonoBehaviour
     graphScript blobNumGraph;
     // Follows same order as returnStats
     List<graphScript> blobStatGraphs = new List<graphScript>();
+    string[] graphNames = {"Population", "Movement", "Sight", "Reach", "Incubation Time", "Size",
+        "Turn Time", "Predation", "Maturation Time", "Child Threshold"};
     float[] blobStatAverages;
 
     public GameObject blobPrefab;
@@ -92,15 +94,27 @@ public class gameManager : MonoBehaviour
         foreach (blobScript b in new List<blobScript>(blobList)) { b.decay(1f); }
     }
 
-    public IEnumerator blobReproduction(float[] b1pos, float[] b2pos, float[] b1stats, float[] b2stats)
+    public IEnumerator blobReproduction(float[] b1stats, float[] b2stats, blobScript b1, blobScript b2)
     {
+        blobScript female = b1.gender == "female" ? b1 : b2;
+        female.startPregnancy();
         yield return new WaitForSeconds((b1stats[3] + b2stats[3]) / 2);
-        Debug.Log("Spawn");
-        spawnBlob((b1pos[0] + b2pos[0]) / 2, (b1pos[1] + b2pos[1]) / 2, b1stats, b2stats);
+        if (female != null)
+        {
+             female.endPregnancy();
+            Debug.Log("Spawn");
+            blobScript child;
+            if (b1 == female) child = spawnBlob(b1.returnPosition(), b1stats, b2stats, b1, b2);
+            else child = spawnBlob(b2.returnPosition(), b1stats, b2stats, b1, b2);
+            b1.children.Add(child);
+            b2.children.Add(child);
+        }
     }
 
-    void spawnBlob(float x, float y, float[] b1stats, float[] b2stats)
+    blobScript spawnBlob(float[] bPosition, float[] b1stats, float[] b2stats, blobScript b1, blobScript b2)
     {
+        float x = bPosition[0];
+        float y = bPosition[1];
         GameObject newBlob = Instantiate(blobPrefab, new Vector3(x, y, 0), Quaternion.identity, mainScene.transform);
         blobScript blob = newBlob.GetComponent<blobScript>();
         float[] newBlobStats = new float[numReturnedStats];
@@ -117,16 +131,20 @@ public class gameManager : MonoBehaviour
             }
             else newBlobStats[i] = parentAvgStats[i] * returnReproductionOffset();
         }
-        blob.setStats(newBlobStats, parentAvgStats);
+        blobScript father = b1.gender == "male" ? b1 : b2;
+        blobScript mother = b1.gender == "female" ? b1 : b2;
+        blob.setStats(newBlobStats, parentAvgStats, father, mother);
+        blob.gender = Random.Range(0f, 1f) <= 0.5f ? "male" : "female";
         blobList.Add(blob);
         checkScene(newBlob);
-        return;
+        return blob;
     }
 
     void spawnBlob(float x, float y)
     {
         GameObject newBlob = Instantiate(blobPrefab, new Vector3(x, y, 0), Quaternion.identity, mainScene.transform);
         blobScript blob = newBlob.GetComponent<blobScript>();
+        blob.gender = Random.Range(0f, 1f) <= 0.5f ? "male" : "female";
         blobList.Add(blob);
     }
 
@@ -147,6 +165,12 @@ public class gameManager : MonoBehaviour
     public void removeBlob(blobScript blob)
     {
         blobList.Remove(blob);
+        if (blob.prey != null) blob.prey.predators.Remove(blob);
+        foreach (blobScript predator in blob.predators)
+        {
+            predator.prey = null;
+            blob.predators.Remove(predator);
+        }
         Debug.Log("Dead");
         Destroy(blob.gameObject);
     }

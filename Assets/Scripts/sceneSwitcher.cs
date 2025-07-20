@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 using TMPro;
 
@@ -10,16 +12,13 @@ public class sceneSwitcher : MonoBehaviour
     public GameObject mainScene;
     public GameObject graphScene;
     public TMP_Text buttonText;
-    public Camera camera;
-    float mainCameraSize;
-    float graphCameraSize = 10;
-    Color graphColor, mainColor;
+
     public string currentScene = "main";
+    public cameraScript cam;
 
     void Start()
     {
         SwitchToMain();
-        mainCameraSize = camera.orthographicSize;
     }
 
     public void SwitchScene()
@@ -53,12 +52,7 @@ public class sceneSwitcher : MonoBehaviour
         {
             text.enabled = true;
         }
-
-        if (ColorUtility.TryParseHtmlString("#BABABA", out graphColor))
-        {
-            camera.backgroundColor = graphColor;
-        }
-        camera.orthographicSize = graphCameraSize;
+        cam.setGraphCamera();
         buttonText.text = "Back";
     }
 
@@ -73,13 +67,9 @@ public class sceneSwitcher : MonoBehaviour
         {
             renderer.enabled = false;
         }
-
-        if (ColorUtility.TryParseHtmlString("#314D79", out mainColor))
-        {
-            camera.backgroundColor = mainColor;
-        }
+        cam.setMainCamera();
         buttonText.text = "Graphs";
-        camera.orthographicSize = mainCameraSize;
+
     }
 
 }
