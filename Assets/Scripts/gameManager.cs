@@ -9,28 +9,27 @@ public class gameManager : MonoBehaviour
 
     public List<blobScript> blobList;
 
-    // every 15 seconds, put a point on the graph
-    int graphInterval = 15;
-    int turnsUntilGraph = 0;
     public int numberOfTurns = 0;
-    int numReturnedStats = 0;
+    public static int numReturnedStats = 0;
 
+    // delete
     // all graphs
     graphScript blobNumGraph;
     // Follows same order as returnStats
     List<graphScript> blobStatGraphs = new List<graphScript>();
     string[] graphNames = {"Population", "Movement", "Sight", "Reach", "Incubation Time", "Size",
         "Turn Time", "Predation", "Maturation Time", "Child Threshold"};
+    
     float[] blobStatAverages;
 
     public GameObject blobPrefab;
-    public GameObject graphPrefab;
     public GameObject mainScene;
     public GameObject graphScene;
-    public sceneSwitcher sceneSwitch;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public sceneSwitcher sceneSwitch;
+    public graphManager graphManager;
+
+    void Awake()
     {
         blobList = new List<blobScript>();
         for (int i = 0; i < 10; i++)
@@ -42,6 +41,7 @@ public class gameManager : MonoBehaviour
         blobStatAverages = new float[numReturnedStats];
         StartCoroutine(TurnLoop());
 
+        // delete
         GameObject numBlobs = Instantiate(graphPrefab, new Vector3(0, 0, 0), Quaternion.identity, graphScene.transform);
         blobNumGraph = numBlobs.GetComponent<graphScript>();
         blobNumGraph.setCenter(0, 0);
@@ -75,19 +75,8 @@ public class gameManager : MonoBehaviour
         numberOfTurns++;
         if (turnsUntilGraph <= 0)
         {
+            graphManager.updateGraphs(blobList.count);
             Debug.Log("Graph Update");
-            blobNumGraph.UpdateData(blobList.Count);
-            blobStatAverages = returnAverage();
-
-            int j = 0;
-            for (int i = 0; i < numReturnedStats; i++)
-            {
-                if (!checkIgnoreStats(i))
-                {
-                    blobStatGraphs[j].UpdateData(blobStatAverages[i]);
-                    j++;
-                }
-            }
             turnsUntilGraph = graphInterval;
         }
 
@@ -135,7 +124,7 @@ public class gameManager : MonoBehaviour
         blobScript mother = b1.gender == "female" ? b1 : b2;
         blob.setStats(newBlobStats, parentAvgStats, father, mother);
         blob.gender = Random.Range(0f, 1f) <= 0.5f ? "male" : "female";
-        blobList.Add(blob);
+        blobList.add(blob);
         checkScene(newBlob);
         return blob;
     }
@@ -145,7 +134,7 @@ public class gameManager : MonoBehaviour
         GameObject newBlob = Instantiate(blobPrefab, new Vector3(x, y, 0), Quaternion.identity, mainScene.transform);
         blobScript blob = newBlob.GetComponent<blobScript>();
         blob.gender = Random.Range(0f, 1f) <= 0.5f ? "male" : "female";
-        blobList.Add(blob);
+        blobList.add(blob);
     }
 
     float returnReproductionOffset()
