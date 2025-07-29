@@ -5664,7 +5664,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 21.45
+  m_fontSize: 41.45
   m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -6127,8 +6127,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 807, y: 448}
-  m_SizeDelta: {x: 181.104, y: 24.0121}
+  m_AnchoredPosition: {x: 765.90027, y: 429.6173}
+  m_SizeDelta: {x: 213.007, y: 46.344}
   m_Pivot: {x: 0.40435302, y: -0.95747745}
 --- !u!114 &967225508
 MonoBehaviour:
@@ -10138,7 +10138,7 @@ MonoBehaviour:
   mainScene: {fileID: 542224947}
   graphScene: {fileID: 598754768}
   sceneSwitch: {fileID: 803482138}
-  graphManager: {fileID: 0}
+  graphManager: {fileID: 598754770}
 --- !u!4 &1597806092
 Transform:
   m_ObjectHideFlags: 0
