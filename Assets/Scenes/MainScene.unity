@@ -3330,6 +3330,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba9f4384a1117934e80e60527c69eaaf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  graphPrefab: {fileID: 2306909259695300313, guid: 9d6101c3ddfa0364d869dd7f6b18fc0a, type: 3}
+  graphScene: {fileID: 598754768}
+  gameManager: {fileID: 1597806091}
 --- !u!1 &619394800
 GameObject:
   m_ObjectHideFlags: 0
@@ -4119,7 +4122,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -320, y: -147}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &691406748
@@ -8802,7 +8805,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -319, y: 185}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1405230403
@@ -10130,11 +10133,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   blobList: []
   numberOfTurns: 0
+  numReturnedStats: 0
   blobPrefab: {fileID: 575840374204187421, guid: 558005ba416947a449f31948d4cb86d5, type: 3}
-  graphPrefab: {fileID: 2306909259695300313, guid: 9d6101c3ddfa0364d869dd7f6b18fc0a, type: 3}
   mainScene: {fileID: 542224947}
   graphScene: {fileID: 598754768}
   sceneSwitch: {fileID: 803482138}
+  graphManager: {fileID: 0}
 --- !u!4 &1597806092
 Transform:
   m_ObjectHideFlags: 0
@@ -11048,7 +11052,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -320, y: 74}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1712777984
@@ -11191,7 +11195,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -319, y: -35}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1741303147

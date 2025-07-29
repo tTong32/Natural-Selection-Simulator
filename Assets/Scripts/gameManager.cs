@@ -9,8 +9,11 @@ public class gameManager : MonoBehaviour
 
     public List<blobScript> blobList;
 
+    int turnsUntilGraph = 0;
+    int graphInterval = 15;
+
     public int numberOfTurns = 0;
-    public static int numReturnedStats = 0;
+    public int numReturnedStats = 0;
 
     // delete
     // all graphs
@@ -40,23 +43,6 @@ public class gameManager : MonoBehaviour
         numReturnedStats = blobList[0].returnStats().Length;
         blobStatAverages = new float[numReturnedStats];
         StartCoroutine(TurnLoop());
-
-        // delete
-        GameObject numBlobs = Instantiate(graphPrefab, new Vector3(0, 0, 0), Quaternion.identity, graphScene.transform);
-        blobNumGraph = numBlobs.GetComponent<graphScript>();
-        blobNumGraph.setCenter(0, 0);
-
-        int j = 0;
-        for (int i = 0; i < numReturnedStats; i++)
-        {
-            if (!checkIgnoreStats(i)) // Skip hunger, water, energy, and thresholds
-            {
-                GameObject newGraph = Instantiate(graphPrefab, new Vector3(0, 0, 0), Quaternion.identity, graphScene.transform);
-                blobStatGraphs.Add(newGraph.GetComponent<graphScript>());
-                blobStatGraphs[j].setCenter(0, -8f);
-                j++;
-            }
-        }
     }
 
     IEnumerator TurnLoop()
@@ -75,7 +61,7 @@ public class gameManager : MonoBehaviour
         numberOfTurns++;
         if (turnsUntilGraph <= 0)
         {
-            graphManager.updateGraphs(blobList.count);
+            graphManager.updateGraphs(blobList.Count, returnAverage());
             Debug.Log("Graph Update");
             turnsUntilGraph = graphInterval;
         }
@@ -124,7 +110,7 @@ public class gameManager : MonoBehaviour
         blobScript mother = b1.gender == "female" ? b1 : b2;
         blob.setStats(newBlobStats, parentAvgStats, father, mother);
         blob.gender = Random.Range(0f, 1f) <= 0.5f ? "male" : "female";
-        blobList.add(blob);
+        blobList.Add(blob);
         checkScene(newBlob);
         return blob;
     }
@@ -134,7 +120,7 @@ public class gameManager : MonoBehaviour
         GameObject newBlob = Instantiate(blobPrefab, new Vector3(x, y, 0), Quaternion.identity, mainScene.transform);
         blobScript blob = newBlob.GetComponent<blobScript>();
         blob.gender = Random.Range(0f, 1f) <= 0.5f ? "male" : "female";
-        blobList.add(blob);
+        blobList.Add(blob);
     }
 
     float returnReproductionOffset()
@@ -198,7 +184,7 @@ public class gameManager : MonoBehaviour
         return avg;
     }
 
-    bool checkIgnoreStats(int i)
+    public bool checkIgnoreStats(int i)
     {
         // Skip hunger, water, energy, and thresholds
         return i >= 6 && i <= 14;

@@ -6,6 +6,10 @@ public class graphManager : MonoBehaviour
 {
 
     public GameObject graphPrefab;
+    public GameObject graphScene;
+    public gameManager gameManager;
+
+    int numReturnedStats;
 
     // all graphs
     graphScript blobNumGraph;
@@ -22,10 +26,12 @@ public class graphManager : MonoBehaviour
         blobNumGraph = numBlobs.GetComponent<graphScript>();
         blobNumGraph.setCenter(0, 0);
 
+        numReturnedStats = gameManager.numReturnedStats;
+
         int j = 0;
         for (int i = 0; i < numReturnedStats; i++)
         {
-            if (!checkIgnoreStats(i)) // Skip hunger, water, energy, and thresholds
+            if (!gameManager.checkIgnoreStats(i)) // Skip hunger, water, energy, and thresholds
             {
                 GameObject newGraph = Instantiate(graphPrefab, new Vector3(0, 0, 0), Quaternion.identity, graphScene.transform);
                 blobStatGraphs.Add(newGraph.GetComponent<graphScript>());
@@ -35,26 +41,18 @@ public class graphManager : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    public void updateGraphs(int numBlobs)
+    public void updateGraphs(int numBlobs, float[] blobStatAverages)
     {
         blobNumGraph.UpdateData(numBlobs);
-        blobStatAverages = returnAverage();
 
         int j = 0;
         for (int i = 0; i < numReturnedStats; i++)
         {
-            if (!checkIgnoreStats(i))
+            if (!gameManager.checkIgnoreStats(i))
             {
                 blobStatGraphs[j].UpdateData(blobStatAverages[i]);
                 j++;
             }
         }
     }
-
 }
