@@ -1,13 +1,22 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 
 public class graphManager : MonoBehaviour
 {
 
     public GameObject graphPrefab;
     public GameObject graphScene;
+    public GameObject graphList;
     public gameManager gameManager;
+
+    // centers of the graphs
+    float[] topLeftCenter = { -8f, 5f }, topRightCenter = {9f, 5f},
+        bottomLeftCenter = { -8f, -5f }, bottomRightCenter = { 9f, -5f };
+
+    TMP_Dropdown[] graphDropdowns = new TMP_Dropdown[4];
+    Camera[] cameras = new Camera[4];
 
     int numReturnedStats;
 
@@ -22,20 +31,28 @@ public class graphManager : MonoBehaviour
     void Start()
     {
 
-        GameObject numBlobs = Instantiate(graphPrefab, new Vector3(0, 0, 0), Quaternion.identity, graphScene.transform);
+        GameObject numBlobs = Instantiate(graphPrefab, new Vector3(0, 0, 0), Quaternion.identity, graphList.transform);
         blobNumGraph = numBlobs.GetComponent<graphScript>();
         blobNumGraph.setCenter(0, 0);
 
         numReturnedStats = gameManager.numReturnedStats;
+
+        graphDropdowns = graphScene.GetComponentsInChildren<TMP_Dropdown>(true);
+        cameras = graphScene.GetComponentsInChildren<Camera>(true);
+        inititializeDropdowns();
 
         int j = 0;
         for (int i = 0; i < numReturnedStats; i++)
         {
             if (!gameManager.checkIgnoreStats(i)) // Skip hunger, water, energy, and thresholds
             {
-                GameObject newGraph = Instantiate(graphPrefab, new Vector3(0, 0, 0), Quaternion.identity, graphScene.transform);
+                GameObject newGraph = Instantiate(graphPrefab, new Vector3(0, 0, 0), Quaternion.identity, graphList.transform);
                 blobStatGraphs.Add(newGraph.GetComponent<graphScript>());
-                blobStatGraphs[j].setCenter(0, -8f);
+                blobStatGraphs[j].setCenter(10 * (i+1), 0f);
+                if (j < cameras.Length)
+                {
+                    cameras[j].transform.Translate(new Vector3(10 * j, 0, -10), Space.World);
+                }
                 j++;
             }
         }
@@ -54,5 +71,21 @@ public class graphManager : MonoBehaviour
                 j++;
             }
         }
+    }
+
+    void inititializeDropdowns()
+    {
+        for (int i = 0; i < graphDropdowns.Length; i++)
+        {
+            graphDropdowns[i].ClearOptions();
+            graphDropdowns[i].AddOptions(new List<string>(graphNames));
+            graphDropdowns[i].value = i;
+            graphDropdowns[i].onValueChanged.AddListener((index) => OnDropdownChanged(i, index));
+        }
+    }
+
+    void OnDropdownChanged(int index, int value)
+    {
+        
     }
 }

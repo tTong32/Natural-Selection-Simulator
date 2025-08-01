@@ -15,14 +15,6 @@ public class gameManager : MonoBehaviour
     public int numberOfTurns = 0;
     public int numReturnedStats = 0;
 
-    // delete
-    // all graphs
-    graphScript blobNumGraph;
-    // Follows same order as returnStats
-    List<graphScript> blobStatGraphs = new List<graphScript>();
-    string[] graphNames = {"Population", "Movement", "Sight", "Reach", "Incubation Time", "Size",
-        "Turn Time", "Predation", "Maturation Time", "Child Threshold"};
-    
     float[] blobStatAverages;
 
     public GameObject blobPrefab;

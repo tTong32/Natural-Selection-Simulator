@@ -6,7 +6,7 @@ public class graphScript : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public LineRenderer lineRenderer;
     int numPoints = 100;
-    float width = 20f, height = 7f;
+    float width = 16f, height = 8f;
     float xTranslate = 0f, yTranslate = 0f;
     float lineWidth = 0.1f;
     // these data points act as queues

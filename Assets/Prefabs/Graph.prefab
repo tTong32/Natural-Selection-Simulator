@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1550856618642002458}
   - component: {fileID: 416647715792992469}
   - component: {fileID: 6922989754711724058}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Graph
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -153,8 +153,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lineRenderer: {fileID: 416647715792992469}
-  graphScene: {fileID: 0}
-  sceneSwitch: {fileID: 0}
   pointPrefab: {fileID: 5153982884695835935, guid: f8d59e504b182f049a6a7c7b4d919888, type: 3}
   axisPrefab: {fileID: 6581723499988401951, guid: 9872adad252061a45877bf1f02d4a0c5, type: 3}
   axisLabelPrefab: {fileID: 6276718419695913351, guid: 610a0c150eea10a4aa8b8004402dbfca, type: 3}

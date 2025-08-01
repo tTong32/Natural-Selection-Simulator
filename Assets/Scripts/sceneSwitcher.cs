@@ -52,6 +52,10 @@ public class sceneSwitcher : MonoBehaviour
         {
             text.enabled = true;
         }
+        foreach (var dropdown in graphScene.GetComponentsInChildren<TMP_Dropdown>(true))
+        {
+            dropdown.gameObject.SetActive(true);
+        }
         cam.setGraphCamera();
         buttonText.text = "Back";
     }
@@ -66,6 +70,14 @@ public class sceneSwitcher : MonoBehaviour
         foreach (var renderer in graphScene.GetComponentsInChildren<Renderer>())
         {
             renderer.enabled = false;
+        }
+        foreach (var text in graphScene.GetComponentsInChildren<TMP_Text>())
+        {
+            text.enabled = false;
+        }
+        foreach (var dropdown in graphScene.GetComponentsInChildren<TMP_Dropdown>(true))
+        {
+            dropdown.gameObject.SetActive(false);
         }
         cam.setMainCamera();
         buttonText.text = "Graphs";
