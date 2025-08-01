@@ -51,7 +51,7 @@ public class graphManager : MonoBehaviour
                 blobStatGraphs[j].setCenter(10 * (i+1), 0f);
                 if (j < cameras.Length)
                 {
-                    cameras[j].transform.Translate(new Vector3(10 * j, 0, -10), Space.World);
+                    cameras[j].transform.Translate(new Vector3(-6.5f + 10 * j, 4, -10), Space.World);
                 }
                 j++;
             }
