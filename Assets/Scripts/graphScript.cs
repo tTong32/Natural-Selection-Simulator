@@ -41,13 +41,9 @@ public class graphScript : MonoBehaviour
         // Initialize the axis
         GameObject xAxis = Instantiate(axisPrefab, new Vector3(xTranslate, yTranslate, 0), Quaternion.identity, this.transform);
         xAxis.transform.localScale = new Vector3(width, 0.1f, 1f);
-        checkScene(xAxis);
 
         GameObject yAxis = Instantiate(axisPrefab, new Vector3(-10f + xTranslate, yTranslate + height / 2, 0), Quaternion.identity, this.transform);
         yAxis.transform.localScale = new Vector3(0.1f, height, 1f);
-        checkScene(yAxis);
-
-        checkScene(gameObject);
 
         DrawYAxisLabels(5);
     }
@@ -87,7 +83,6 @@ public class graphScript : MonoBehaviour
                 lineRenderer.SetPosition(i, new Vector3(x, y, 0));
 
                 GameObject point = Instantiate(pointPrefab, new Vector3(x, y, 0), Quaternion.identity, this.transform);
-                checkScene(point);
                 points.Add(point);
                 i++;
                 if (i >= count) break;
@@ -96,7 +91,6 @@ public class graphScript : MonoBehaviour
         else
         {
             GameObject point = Instantiate(pointPrefab, new Vector3(-10 + xTranslate, height + yTranslate, 0), Quaternion.identity, this.transform);
-            checkScene(point);
             points.Add(point);
         }
 
@@ -120,7 +114,6 @@ public class graphScript : MonoBehaviour
                 lineRenderer.SetPosition(i, new Vector3(x, y, 0));
 
                 GameObject point = Instantiate(pointPrefab, new Vector3(x, y, 0), Quaternion.identity, this.transform);
-                checkScene(point);
                 points.Add(point);
                 i++;
                 if (i >= count) break;
@@ -129,7 +122,6 @@ public class graphScript : MonoBehaviour
         else
         {
             GameObject point = Instantiate(pointPrefab, new Vector3(-10 + xTranslate, height + yTranslate, 0), Quaternion.identity, this.transform);
-            checkScene(point);
             points.Add(point);
         }
 
@@ -145,7 +137,6 @@ public class graphScript : MonoBehaviour
             float x = -10.5f + xTranslate;
 
             GameObject label = Instantiate(axisLabelPrefab, new Vector3(x, y, 0), Quaternion.identity, this.transform);
-            checkScene(label);
             TMPro.TextMeshPro text = label.GetComponent<TMPro.TextMeshPro>();
             text.text = $"{i * (maxValueInt / (numLabels - 1))}";
             text.color = Color.black;
@@ -155,7 +146,6 @@ public class graphScript : MonoBehaviour
             if (i != 0)
             {
                 GameObject tick = Instantiate(axisTickPrefab, new Vector3(-10f + xTranslate, y, 0), Quaternion.identity, this.transform);
-                checkScene(tick);
             }
         }
     }
@@ -191,24 +181,6 @@ public class graphScript : MonoBehaviour
         dataQueue.Enqueue(value);
         if (value > maxValueInt) maxValueInt = value;
         return maxValueInt;
-    }
-
-    void checkScene(GameObject obj)
-    {
-        if (sceneSwitch.currentScene != "graph")
-        {
-            var renderer = obj.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                renderer.enabled = false;
-            }
-            else
-            {
-                var tmp = obj.GetComponent<TMPro.TextMeshPro>();
-                if (tmp != null)
-                    tmp.enabled = false;
-            }
-        }
     }
 
     public void setCenter(float x, float y)

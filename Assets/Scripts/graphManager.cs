@@ -48,10 +48,11 @@ public class graphManager : MonoBehaviour
             {
                 GameObject newGraph = Instantiate(graphPrefab, new Vector3(0, 0, 0), Quaternion.identity, graphList.transform);
                 blobStatGraphs.Add(newGraph.GetComponent<graphScript>());
-                blobStatGraphs[j].setCenter(10 * (i+1), 0f);
+                blobStatGraphs[j].setCenter(16 * (i+1), 0f);
                 if (j < cameras.Length)
                 {
-                    cameras[j].transform.Translate(new Vector3(-6.5f + 10 * j, 4, -10), Space.World);
+                    cameras[j].transform.Translate(new Vector3(-6.5f + 16 * j, 4, -10), Space.World);
+                    cameras[j].orthographicSize = 8f;
                 }
                 j++;
             }

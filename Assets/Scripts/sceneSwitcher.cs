@@ -47,10 +47,15 @@ public class sceneSwitcher : MonoBehaviour
         {
             renderer.enabled = true;
         }
-
+        /*
         foreach (var text in graphScene.GetComponentsInChildren<TMP_Text>())
         {
             text.enabled = true;
+        }
+        */
+        foreach (var image in graphScene.GetComponentsInChildren<UnityEngine.UI.RawImage>())
+        {
+            image.enabled = true;
         }
         foreach (var dropdown in graphScene.GetComponentsInChildren<TMP_Dropdown>(true))
         {
@@ -71,9 +76,15 @@ public class sceneSwitcher : MonoBehaviour
         {
             renderer.enabled = false;
         }
+        /*
         foreach (var text in graphScene.GetComponentsInChildren<TMP_Text>())
         {
             text.enabled = false;
+        }
+        */
+        foreach (var image in graphScene.GetComponentsInChildren<UnityEngine.UI.RawImage>())
+        {
+            image.enabled = false;
         }
         foreach (var dropdown in graphScene.GetComponentsInChildren<TMP_Dropdown>(true))
         {
