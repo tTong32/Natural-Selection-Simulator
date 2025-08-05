@@ -48,11 +48,26 @@ public class graphManager : MonoBehaviour
             {
                 GameObject newGraph = Instantiate(graphPrefab, new Vector3(0, 0, 0), Quaternion.identity, graphList.transform);
                 blobStatGraphs.Add(newGraph.GetComponent<graphScript>());
-                blobStatGraphs[j].setCenter(16 * (i+1), 0f);
+                blobStatGraphs[j].setCenter(17 * (i+1), 0f);
+
                 if (j < cameras.Length)
                 {
-                    cameras[j].transform.Translate(new Vector3(-6.5f + 16 * j, 4, -10), Space.World);
-                    cameras[j].orthographicSize = 8f;
+                    // Set the center of the graph in world space
+                    float centerX = -2.5f + 17 * j;
+                    float centerY = 4.5f;
+                    float graphWidth = 16f;
+                    float graphHeight = 9f;
+                    
+                    cameras[j].transform.position = new Vector3(centerX, centerY, -10);
+                    cameras[j].orthographicSize = 5f;
+
+                    // this sets the viewbox of the camera to a 16:9 aspect ratio
+                    Rect rect = cameras[j].rect;
+                    rect.x = 0;
+                    rect.y = 0;
+                    rect.width = graphWidth / graphHeight;
+                    rect.height = 1f;
+                    cameras[j].rect = rect;
                 }
                 j++;
             }

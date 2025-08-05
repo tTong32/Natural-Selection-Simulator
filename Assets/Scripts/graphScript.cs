@@ -6,7 +6,7 @@ public class graphScript : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public LineRenderer lineRenderer;
     int numPoints = 100;
-    float width = 16f, height = 8f;
+    float width = 16f, height = 9f;
     float xTranslate = 0f, yTranslate = 0f;
     float lineWidth = 0.1f;
     // these data points act as queues
@@ -39,7 +39,7 @@ public class graphScript : MonoBehaviour
         sceneSwitch = GameObject.Find("SceneSwitcher").GetComponent<sceneSwitcher>();
 
         // Initialize the axis
-        GameObject xAxis = Instantiate(axisPrefab, new Vector3(xTranslate, yTranslate, 0), Quaternion.identity, this.transform);
+        GameObject xAxis = Instantiate(axisPrefab, new Vector3(xTranslate - 2f, yTranslate, 0), Quaternion.identity, this.transform);
         xAxis.transform.localScale = new Vector3(width, 0.1f, 1f);
 
         GameObject yAxis = Instantiate(axisPrefab, new Vector3(-10f + xTranslate, yTranslate + height / 2, 0), Quaternion.identity, this.transform);
