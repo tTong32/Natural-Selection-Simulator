@@ -6,7 +6,7 @@ public class graphScript : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public LineRenderer lineRenderer;
     int numPoints = 100;
-    float width = 16f, height = 9f;
+    float width = 15f, height = 9f;
     float xTranslate = 0f, yTranslate = 0f;
     float lineWidth = 0.1f;
     // these data points act as queues
@@ -39,7 +39,7 @@ public class graphScript : MonoBehaviour
         sceneSwitch = GameObject.Find("SceneSwitcher").GetComponent<sceneSwitcher>();
 
         // Initialize the axis
-        GameObject xAxis = Instantiate(axisPrefab, new Vector3(xTranslate - 2f, yTranslate, 0), Quaternion.identity, this.transform);
+        GameObject xAxis = Instantiate(axisPrefab, new Vector3(xTranslate - 2.5f, yTranslate, 0), Quaternion.identity, this.transform);
         xAxis.transform.localScale = new Vector3(width, 0.1f, 1f);
 
         GameObject yAxis = Instantiate(axisPrefab, new Vector3(-10f + xTranslate, yTranslate + height / 2, 0), Quaternion.identity, this.transform);
@@ -97,12 +97,12 @@ public class graphScript : MonoBehaviour
         updateTicksInt();
     }
 
-        void UpdateGraphFloat()
-        {
-            foreach (var p in points) Destroy(p);
-            points.Clear();
+    void UpdateGraphFloat()
+    {
+        foreach (var p in points) Destroy(p);
+        points.Clear();
 
-            int count = Mathf.Min(numPoints, statListFloat.Count);
+        int count = Mathf.Min(numPoints, statListFloat.Count);
         if (count > 1)
         {
             lineRenderer.positionCount = count;
@@ -125,8 +125,8 @@ public class graphScript : MonoBehaviour
             points.Add(point);
         }
 
-            updateTicksFloat();
-        }
+        updateTicksFloat();
+    }
 
     void DrawYAxisLabels(int numLabels)
     {
@@ -134,12 +134,13 @@ public class graphScript : MonoBehaviour
         for (int i = 0; i < numLabels; i++)
         {
             float y = yTranslate + i * labelInterval;
-            float x = -10.5f + xTranslate;
+            float x = -10.75f + xTranslate;
 
             GameObject label = Instantiate(axisLabelPrefab, new Vector3(x, y, 0), Quaternion.identity, this.transform);
             TMPro.TextMeshPro text = label.GetComponent<TMPro.TextMeshPro>();
             text.text = $"{i * (maxValueInt / (numLabels - 1))}";
             text.color = Color.black;
+            text.fontSize = 9f;
 
             yLabels.Add(text);
 
@@ -165,6 +166,7 @@ public class graphScript : MonoBehaviour
         for (int i = 0; i < n; i++)
         {
             yLabels[i].text = $"{i * (maxValueFloat / (float)(n - 1)):0.000}";
+            yLabels[i].transform.position = new Vector3(-11.5f + xTranslate, yLabels[i].transform.position.y, 0);
         }
     }
 
